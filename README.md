@@ -10,12 +10,24 @@ A personal trip-itinerary companion, installable on iPhone as a home-screen app 
 - **Uber** — every item with a location can also launch the Uber app with the dropoff pre-filled.
 - **Installable** — add it to your iPhone home screen and it runs full-screen, offline-capable, no App Store needed.
 
+## Live site
+
+Deployed on Netlify: https://travel-planner-uk.netlify.app
+
 ## Install on iPhone
 
-1. Deploy `dist/` (after `npm run build`) to any static host, or run it locally on your Mac and open the LAN URL from your iPhone (`npm run dev -- --host`).
-2. Open the site in Safari on your iPhone.
-3. Tap the Share icon → **Add to Home Screen**.
-4. Launch it from the home screen icon — it opens full-screen like a native app.
+1. Open https://travel-planner-uk.netlify.app in Safari on your iPhone.
+2. Tap the Share icon → **Add to Home Screen**.
+3. Launch it from the home screen icon — it opens full-screen like a native app.
+
+## Deploying updates
+
+The repo isn't connected to Netlify's auto-deploy-on-push (it's a private repo, deployed manually from the CLI):
+
+```bash
+npm run build
+npx netlify-cli deploy --prod --dir=dist
+```
 
 ## Development
 
