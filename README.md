@@ -12,21 +12,21 @@ A personal trip-itinerary companion, installable on iPhone as a home-screen app 
 
 ## Live site
 
-Deployed on Netlify: https://travel-planner-uk.netlify.app
+Deployed on Cloudflare Pages: https://travel-planner-uk.pages.dev
 
 ## Install on iPhone
 
-1. Open https://travel-planner-uk.netlify.app in Safari on your iPhone.
+1. Open https://travel-planner-uk.pages.dev in Safari on your iPhone.
 2. Tap the Share icon → **Add to Home Screen**.
 3. Launch it from the home screen icon — it opens full-screen like a native app.
 
 ## Deploying updates
 
-The repo isn't connected to Netlify's auto-deploy-on-push (it's a private repo, deployed manually from the CLI):
+The repo isn't connected to Cloudflare's auto-deploy-on-push (it's a private repo, deployed manually from the CLI):
 
 ```bash
 npm run build
-npx netlify-cli deploy --prod --dir=dist
+npx wrangler pages deploy dist --project-name travel-planner-uk --branch main
 ```
 
 ## Development
