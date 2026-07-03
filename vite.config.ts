@@ -3,10 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-const base = '/Travel-Planner/'
-
 export default defineConfig({
-  base,
   plugins: [
     react(),
     VitePWA({
@@ -16,8 +13,8 @@ export default defineConfig({
         name: 'Travel Planner',
         short_name: 'Travel',
         description: 'Personal trip itinerary companion',
-        start_url: base,
-        scope: base,
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
         background_color: '#111827',
         theme_color: '#111827',
