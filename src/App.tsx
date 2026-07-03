@@ -14,7 +14,18 @@ export default function App() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    activeDataSource.load().then(setTrip);
+    let cancelled = false;
+    const refresh = () => {
+      activeDataSource.load().then((t) => {
+        if (!cancelled) setTrip(t);
+      });
+    };
+    refresh();
+    const id = setInterval(refresh, 10 * 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
