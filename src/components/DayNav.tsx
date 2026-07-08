@@ -13,11 +13,11 @@ export function DayNav({ date, dates, onChange }: Props) {
 
   return (
     <div className="day-nav">
-      <button disabled={!prev} onClick={() => prev && onChange(prev)} aria-label="Previous day">
+      <button disabled={!prev} onClick={prev ? () => onChange(prev) : undefined} aria-label="Previous day">
         ‹
       </button>
       <span className="day-nav-label">{formatDayLabel(date)}</span>
-      <button disabled={!next} onClick={() => next && onChange(next)} aria-label="Next day">
+      <button disabled={!next} onClick={next ? () => onChange(next) : undefined} aria-label="Next day">
         ›
       </button>
     </div>

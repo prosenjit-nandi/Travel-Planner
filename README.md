@@ -33,9 +33,11 @@ npx wrangler pages deploy dist --project-name travel-planner-uk --branch main
 
 ```bash
 npm install
-npm run dev      # local dev server
-npm run build     # type-check + production build to dist/
-npm run lint      # oxlint
+npm run dev            # local dev server
+npm run build           # type-check + production build to dist/
+npm run lint            # oxlint
+npm run test            # vitest
+npm run test:coverage   # vitest with a coverage report (100% line/branch/function/statement threshold)
 ```
 
 ## Changing the trip data
