@@ -7,8 +7,8 @@ const liveSource = googleSheetTripSource({
   id: "uk-2026",
   title: "UK & Scotland Trip 2026",
   timezone: "Europe/London",
-  sheetId: "1Debf-8Bn0FiQmmaxNOXouH0e0wsG9UDd1N2o6oorSA8",
-  gid: "839733258",
+  endpoint: "/api/itinerary",
+  token: import.meta.env.VITE_ITINERARY_PROXY_TOKEN,
 });
 
 const fallbackSource = staticTripSource(uk2026 as Trip);
