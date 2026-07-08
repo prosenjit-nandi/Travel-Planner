@@ -1,0 +1,45 @@
+{
+  "id": "uk-2026",
+  "title": "UK & Scotland Trip 2026",
+  "timezone": "Europe/London",
+  "items": [
+    {
+      "id": "2026-01-01-1",
+      "date": "2026-01-01",
+      "startTime": "09:00",
+      "endTime": "11:00",
+      "activity": "Flight",
+      "locationName": "Example Airport (XXX)",
+      "category": "Transport",
+      "notes": "Sample flight number"
+    },
+    {
+      "id": "2026-01-01-2",
+      "date": "2026-01-01",
+      "startTime": "12:00",
+      "endTime": "13:00",
+      "activity": "Hotel Check In",
+      "locationName": "Example Hotel",
+      "category": "Accommodation"
+    },
+    {
+      "id": "2026-01-01-3",
+      "date": "2026-01-01",
+      "startTime": "13:30",
+      "endTime": "15:00",
+      "activity": "Lunch",
+      "locationName": "Example Cafe",
+      "category": "Dining"
+    },
+    {
+      "id": "2026-01-01-4",
+      "date": "2026-01-01",
+      "startTime": "15:30",
+      "endTime": "18:00",
+      "activity": "City Walking Tour",
+      "locationName": "Example Landmark",
+      "category": "Excursion",
+      "notes": "This bundled JSON is only a fallback used when the live data source is unreachable and there's no cached trip yet. Point src/data/activeTrip.ts at your own source for real data."
+    }
+  ]
+}

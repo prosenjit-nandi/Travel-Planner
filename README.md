@@ -22,7 +22,7 @@ Deployed on Cloudflare Pages: https://travel-planner-uk.pages.dev
 
 ## Deploying updates
 
-The repo isn't connected to Cloudflare's auto-deploy-on-push (it's a private repo, deployed manually from the CLI):
+The repo isn't connected to Cloudflare's auto-deploy-on-push; it's deployed manually from the CLI:
 
 ```bash
 npm run build
