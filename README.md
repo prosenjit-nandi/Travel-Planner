@@ -63,6 +63,7 @@ A bare venue name like "Waterloo Station" or "The Ivy" isn't unique — Maps/Ube
 
 - Prefer a precise `address` when you have one; it's used as-is, with no disambiguation applied.
 - Otherwise, set `Trip.region` (e.g. `"United Kingdom"`) once for the whole trip, and optionally `city` per item (e.g. `"Edinburgh"`, via a `City` column in the Google Sheet) for venues whose name alone isn't unique even within the country. Both are appended to the `locationName` query, skipped if already implied by the name, so results stay anchored without duplicating text like "Edinburgh Castle, Edinburgh, Edinburgh".
+- If `Location` is a generic placeholder — "Hotel", "Restaurant", "Taxi", "Airport", or the row's own `Category` — and `Notes` holds the actual venue instead, `Notes` is used for the Maps/Uber query in its place. This only ever fires when `Location` looks like a placeholder; a specific `Location` value is never overridden.
 
 ## Live Google Sheet integration
 

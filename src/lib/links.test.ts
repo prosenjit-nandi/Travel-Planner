@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ItineraryItem } from "../data/types";
-import { googleMapsUrl, uberUrl } from "./links";
+import { googleMapsUrl, locationQuery, uberUrl } from "./links";
 
 function item(overrides: Partial<ItineraryItem> = {}): ItineraryItem {
   return {
@@ -72,6 +72,47 @@ describe("googleMapsUrl", () => {
     );
     expect(url).toContain(encodeURIComponent("123 Main St"));
     expect(url).not.toContain(encodeURIComponent("United Kingdom"));
+  });
+});
+
+describe("locationQuery", () => {
+  it("prefers notes over a generic location name", () => {
+    const query = locationQuery(
+      item({ locationName: "Hotel", notes: "The Marriott County Hall, Westminster Bridge Rd" }),
+    );
+    expect(query).toBe("The Marriott County Hall, Westminster Bridge Rd");
+  });
+
+  it("treats a location name that matches its own category as generic too", () => {
+    const query = locationQuery(
+      item({ locationName: "Transport", category: "Transport", notes: "Heathrow Airport Terminal 5" }),
+    );
+    expect(query).toBe("Heathrow Airport Terminal 5");
+  });
+
+  it("falls back to the generic location name when notes are empty", () => {
+    expect(locationQuery(item({ locationName: "Hotel", notes: "" }))).toBe("Hotel");
+  });
+
+  it("falls back to the generic location name when notes are also generic", () => {
+    expect(locationQuery(item({ locationName: "Hotel", notes: "Restaurant" }))).toBe("Hotel");
+  });
+
+  it("uses notes when the location name is blank", () => {
+    expect(locationQuery(item({ locationName: "", notes: "The Ivy, Covent Garden" }))).toBe(
+      "The Ivy, Covent Garden",
+    );
+  });
+
+  it("does not override a specific location name with notes", () => {
+    expect(locationQuery(item({ locationName: "The Ritz", notes: "Ask for the garden entrance" }))).toBe(
+      "The Ritz",
+    );
+  });
+
+  it("ignores notes entirely when a precise address is set", () => {
+    const query = locationQuery(item({ address: "123 Main St", locationName: "Hotel", notes: "The Marriott" }));
+    expect(query).toBe("123 Main St");
   });
 });
 
