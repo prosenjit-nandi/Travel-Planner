@@ -199,4 +199,18 @@ describe("cityForDay", () => {
     const items = [item({ city: "London" }), item({ city: "Windsor" })];
     expect(cityForDay(items)).toBe("London");
   });
+
+  it("falls back to keyword detection in location name, activity, and notes", () => {
+    const items = [
+      item({ locationName: "Heathrow Airport (LHR)", category: "Transport" }),
+      item({ locationName: "Sir Winston Churchill statue", notes: "Visiting Westminster Abbey" }),
+    ];
+    expect(cityForDay(items)).toBe("London");
+
+    const items2 = [
+      item({ locationName: "Burns Monument", category: "Excursion" }),
+    ];
+    expect(cityForDay(items2)).toBe("Edinburgh");
+  });
 });
+

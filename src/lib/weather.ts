@@ -43,16 +43,64 @@ function daysFromToday(dateStr: string): number {
   return Math.round((target.getTime() - startOfToday.getTime()) / 86_400_000);
 }
 
+function detectCityFromText(text: string): string | undefined {
+  const t = text.toLowerCase();
+  if (
+    t.includes("edinburgh") ||
+    t.includes("edi") ||
+    t.includes("scotland") ||
+    t.includes("highlands") ||
+    t.includes("royal mile") ||
+    t.includes("calton hill") ||
+    t.includes("castlehill") ||
+    t.includes("princes street") ||
+    t.includes("mercat cross") ||
+    t.includes("grassmarket") ||
+    t.includes("burns") ||
+    t.includes("howies") ||
+    t.includes("larder") ||
+    t.includes("mercat")
+  ) {
+    return "Edinburgh";
+  }
+
+  if (
+    t.includes("london") ||
+    t.includes("lhr") ||
+    t.includes("heathrow") ||
+    t.includes("waterloo") ||
+    t.includes("covent garden") ||
+    t.includes("westminster") ||
+    t.includes("big ben") ||
+    t.includes("tower bridge") ||
+    t.includes("london eye") ||
+    t.includes("south bank") ||
+    t.includes("bethnal green") ||
+    t.includes("british museum")
+  ) {
+    return "London";
+  }
+  if (t.includes("jfk") || t.includes("john f. kennedy") || t.includes("new york")) {
+    return "New York";
+  }
+  if (t.includes("hamilton")) {
+    return "Hamilton";
+  }
+  return undefined;
+}
+
 /**
  * The day's primary city — whichever named city most of that day's items
- * agree on, not just the first one mentioned (a day that starts with an
- * airport transfer tagged to the arrival city shouldn't out-vote three
- * excursions tagged to where you actually spent the day).
+ * agree on, falling back to keyword detection in name/activity/notes if no
+ * explicit city column is present.
  */
 export function cityForDay(items: ItineraryItem[]): string | undefined {
   const counts = new Map<string, number>();
   for (const item of items) {
-    const city = item.city?.trim();
+    let city = item.city?.trim();
+    if (!city) {
+      city = detectCityFromText(`${item.locationName} ${item.activity} ${item.notes || ""}`);
+    }
     if (city) counts.set(city, (counts.get(city) ?? 0) + 1);
   }
 
@@ -66,6 +114,7 @@ export function cityForDay(items: ItineraryItem[]): string | undefined {
   }
   return best;
 }
+
 
 function calculateRainTime(hourlyTime: string[], hourlyPrecipitation: number[]): string {
   const rainHours: number[] = [];
