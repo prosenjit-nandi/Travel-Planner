@@ -246,7 +246,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "London" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Edinburgh" })).toBeInTheDocument();
     // Each day within a city gets its own sentence, not one merged per city.
-    expect(screen.getByText("Visiting Heathrow Airport.")).toBeInTheDocument();
+    expect(screen.getByText("Flying from Heathrow Airport.")).toBeInTheDocument();
     expect(screen.getByText("Visiting Tower Bridge.")).toBeInTheDocument();
     expect(screen.getByText("Visiting Edinburgh Castle.")).toBeInTheDocument();
 

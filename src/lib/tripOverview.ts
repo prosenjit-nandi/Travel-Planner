@@ -10,8 +10,39 @@ export interface DaySummary {
   date: string;
   city?: string;
   itemCount: number;
-  /** Unique, resolved destination entries for the day, in itinerary order. */
+/** Unique, resolved destination entries for the day, in itinerary order. */
   places: PlaceEntry[];
+}
+
+/** Assigns a priority weight to categories to select the most relevant one for a place. */
+export function getCategoryPriority(category: string): number {
+  const cat = category.trim().toLowerCase();
+  if (cat === "excursion") return 4;
+  if (cat === "accommodation" || cat === "accomodation") return 3;
+  if (cat === "dining") return 2;
+  if (cat === "transport" || cat === "flight") return 1;
+  return 0;
+}
+
+/** Determines if a transport location represents an airport or flight. */
+export function isAirportOrFlight(name: string, activity: string): boolean {
+  const combined = `${name} ${activity}`.toLowerCase();
+  
+  // General keywords can be substring matches
+  const keywords = [
+    "airport", "terminal", "departure", "flight",
+    "heathrow", "gatwick", "stansted", "luton", "city airport"
+  ];
+  if (keywords.some((k) => combined.includes(k))) {
+    return true;
+  }
+
+  // Airport codes must match as full words to avoid matching substrings like "edi" in "Edinburgh"
+  const codes = ["jfk", "lhr", "edi", "lgw", "stn"];
+  return codes.some((code) => {
+    const regex = new RegExp(`\\b${code}\\b`, "i");
+    return regex.test(combined);
+  });
 }
 
 export interface TripLeg {

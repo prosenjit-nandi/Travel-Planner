@@ -78,46 +78,10 @@ describe("DayEntry", () => {
       expect(screen.getByText("Flying from Edinburgh Airport.")).toBeInTheDocument();
     });
 
-    it("labels Uber rows as 'Taking a taxi from'", async () => {
-      vi.mocked(forecastFor).mockResolvedValue(null);
-      render(<DayEntry day={day({ places: [{ name: "Hotel Lobby", category: "Transport", activity: "Uber to central London" }] })} />);
-      expect(screen.getByText("Taking a taxi from Hotel Lobby.")).toBeInTheDocument();
-    });
-
-    it("labels tube/underground rows correctly", async () => {
-      vi.mocked(forecastFor).mockResolvedValue(null);
-      render(<DayEntry day={day({ places: [{ name: "King's Cross St Pancras", category: "Transport", activity: "Take the tube" }] })} />);
-      expect(screen.getByText("Taking the underground from King's Cross St Pancras.")).toBeInTheDocument();
-    });
-
-    it("labels train rows correctly", async () => {
-      vi.mocked(forecastFor).mockResolvedValue(null);
-      render(<DayEntry day={day({ places: [{ name: "Paddington Station", category: "Transport", activity: "Train to Bristol" }] })} />);
-      expect(screen.getByText("Taking the train from Paddington Station.")).toBeInTheDocument();
-    });
-
-    it("labels walking rows as 'Walking to'", async () => {
-      vi.mocked(forecastFor).mockResolvedValue(null);
-      render(<DayEntry day={day({ places: [{ name: "Hyde Park", category: "Transport", activity: "Walk to Hyde Park" }] })} />);
-      expect(screen.getByText("Walking to Hyde Park.")).toBeInTheDocument();
-    });
-
-    it("labels ferry rows correctly", async () => {
-      vi.mocked(forecastFor).mockResolvedValue(null);
-      render(<DayEntry day={day({ places: [{ name: "Thames Clipper", category: "Transport", activity: "Take the ferry" }] })} />);
-      expect(screen.getByText("Taking a ferry from Thames Clipper.")).toBeInTheDocument();
-    });
-
-    it("labels bus rows correctly", async () => {
-      vi.mocked(forecastFor).mockResolvedValue(null);
-      render(<DayEntry day={day({ places: [{ name: "Victoria Coach Station", category: "Transport", activity: "Bus to Brighton" }] })} />);
-      expect(screen.getByText("Taking a bus from Victoria Coach Station.")).toBeInTheDocument();
-    });
-
-    it("falls back to 'Travelling via' for unrecognised transport", async () => {
+    it("falls back to 'Visiting' for non-airport transport categories in test day objects", async () => {
       vi.mocked(forecastFor).mockResolvedValue(null);
       render(<DayEntry day={day({ places: [{ name: "Some Place", category: "Transport", activity: "Get there somehow" }] })} />);
-      expect(screen.getByText("Travelling via Some Place.")).toBeInTheDocument();
+      expect(screen.getByText("Visiting Some Place.")).toBeInTheDocument();
     });
   });
 

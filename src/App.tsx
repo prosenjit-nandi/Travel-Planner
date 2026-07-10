@@ -5,7 +5,7 @@ import { resolveDayItems, todayISO, defaultTripDate } from "./lib/time";
 import { getDayStatus } from "./lib/schedule";
 import { cityForDay } from "./lib/weather";
 import { baseLocation } from "./lib/links";
-import { groupTripLegs, type DaySummary, type PlaceEntry } from "./lib/tripOverview";
+import { groupTripLegs, type DaySummary, type PlaceEntry, getCategoryPriority, isAirportOrFlight } from "./lib/tripOverview";
 import { StatusBanner } from "./components/StatusBanner";
 import { DayNav } from "./components/DayNav";
 import { DayWeather } from "./components/DayWeather";
@@ -60,16 +60,54 @@ export default function App() {
     if (!trip) return [];
     const daySummaries: DaySummary[] = tripDates.map((date) => {
       const items = trip.items.filter((i) => i.date === date);
-      const seen = new Set<string>();
-      const places: PlaceEntry[] = items.reduce<PlaceEntry[]>((acc, item) => {
+      
+      const locationGroups = new Map<string, typeof items>();
+      const locationOrder: string[] = [];
+      
+      for (const item of items) {
         const name = baseLocation(item);
-        if (!name) return acc;
+        if (!name) continue;
         const key = name.trim().toLowerCase();
-        if (seen.has(key)) return acc;
-        seen.add(key);
-        acc.push({ name, category: item.category, activity: item.activity });
-        return acc;
-      }, []);
+        if (!locationGroups.has(key)) {
+          locationGroups.set(key, []);
+          locationOrder.push(key);
+        }
+        locationGroups.get(key)!.push(item);
+      }
+
+      const places: PlaceEntry[] = [];
+      for (const key of locationOrder) {
+        const group = locationGroups.get(key)!;
+        
+        let bestItem = group[0];
+        let bestPriority = getCategoryPriority(bestItem.category);
+        
+        for (let i = 1; i < group.length; i++) {
+          const prio = getCategoryPriority(group[i].category);
+          if (prio > bestPriority) {
+            bestPriority = prio;
+            bestItem = group[i];
+          }
+        }
+        
+        const name = baseLocation(bestItem)!;
+        const isTransport = 
+          bestItem.category.trim().toLowerCase() === "transport" || 
+          bestItem.category.trim().toLowerCase() === "flight" ||
+          !bestItem.category.trim();
+          
+        if (isTransport) {
+          if (!isAirportOrFlight(name, bestItem.activity)) {
+            continue;
+          }
+        }
+        
+        places.push({
+          name,
+          category: bestItem.category,
+          activity: bestItem.activity
+        });
+      }
       return { date, city: cityForDay(items), itemCount: items.length, places };
     });
     return groupTripLegs(daySummaries);
