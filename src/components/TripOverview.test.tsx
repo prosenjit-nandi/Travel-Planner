@@ -1,99 +1,69 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { TripLeg } from "../lib/tripOverview";
 import { TripOverview } from "./TripOverview";
 
-vi.mock("./DayWeather", () => ({
-  DayWeather: ({ city, date }: { city: string; date: string }) => (
-    <div data-testid="day-weather">
-      {city}-{date}
-    </div>
-  ),
-}));
-
-vi.mock("./LegThumbnail", () => ({
-  LegThumbnail: ({ query }: { query: string }) => <div data-testid="leg-thumbnail">{query}</div>,
+vi.mock("./LegSummary", () => ({
+  LegSummary: ({ leg }: { leg: TripLeg }) => <li data-testid="leg-summary">{leg.city ?? "Location TBD"}</li>,
 }));
 
 function leg(overrides: Partial<TripLeg> = {}): TripLeg {
   return {
     city: "London",
-    startDate: "2026-07-25",
-    endDate: "2026-07-25",
+    startDate: "2026-07-24",
+    endDate: "2026-07-24",
     itemCount: 1,
-    categoryCounts: { Excursion: 1 },
+    places: ["British Museum"],
     ...overrides,
   };
 }
 
 describe("TripOverview", () => {
-  it("renders a leg's city and a single-day date with no nights suffix", () => {
-    render(<TripOverview legs={[leg()]} onSelect={() => {}} />);
-    expect(screen.getByText("London", { selector: ".trip-overview-city" })).toBeInTheDocument();
-    expect(screen.getByText("Jul 25")).toBeInTheDocument();
-  });
-
-  it("renders a date range with a pluralized nights count for a multi-day leg", () => {
-    render(
-      <TripOverview legs={[leg({ startDate: "2026-07-24", endDate: "2026-07-26" })]} onSelect={() => {}} />,
-    );
-    expect(screen.getByText(/Jul 24.*Jul 26.*2 nights/)).toBeInTheDocument();
-  });
-
-  it("uses the singular 'night' for a two-day leg", () => {
-    render(
-      <TripOverview legs={[leg({ startDate: "2026-07-24", endDate: "2026-07-25" })]} onSelect={() => {}} />,
-    );
-    expect(screen.getByText(/1 night$/)).toBeInTheDocument();
-  });
-
-  it("labels a leg with no known city as 'Location TBD' and skips weather/thumbnail", () => {
-    render(<TripOverview legs={[leg({ city: undefined })]} onSelect={() => {}} />);
-    expect(screen.getByText("Location TBD")).toBeInTheDocument();
-    expect(screen.queryByTestId("day-weather")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("leg-thumbnail")).not.toBeInTheDocument();
-  });
-
-  it("renders weather and a thumbnail keyed off the leg's city and start date", () => {
-    render(<TripOverview legs={[leg({ city: "Edinburgh", startDate: "2026-07-26" })]} onSelect={() => {}} />);
-    expect(screen.getByTestId("day-weather")).toHaveTextContent("Edinburgh-2026-07-26");
-    expect(screen.getByTestId("leg-thumbnail")).toHaveTextContent("Edinburgh");
-  });
-
-  it("renders category badges sorted by count, descending", () => {
+  it("renders a leg summary per leg", () => {
     render(
       <TripOverview
-        legs={[leg({ categoryCounts: { Transport: 1, Excursion: 3, Dining: 2 } })]}
-        onSelect={() => {}}
+        legs={[leg(), leg({ city: "Edinburgh", startDate: "2026-07-25", endDate: "2026-07-25" })]}
+        totalDays={2}
       />,
     );
-    const badges = screen.getAllByText(/^(Transport|Excursion|Dining) \d$/);
-    expect(badges.map((b) => b.textContent)).toEqual(["Excursion 3", "Dining 2", "Transport 1"]);
+    expect(screen.getAllByTestId("leg-summary")).toHaveLength(2);
   });
 
-  it("falls back to a neutral style for an unrecognized category", () => {
-    render(<TripOverview legs={[leg({ categoryCounts: { Something: 1 } })]} onSelect={() => {}} />);
-    expect(screen.getByText("Something 1")).toHaveClass("cat-other");
+  it("renders an intro line summarizing days, cities, and dates", () => {
+    render(
+      <TripOverview
+        legs={[
+          leg({ startDate: "2026-07-24", endDate: "2026-07-24" }),
+          leg({ city: "Edinburgh", startDate: "2026-07-25", endDate: "2026-07-26" }),
+        ]}
+        totalDays={3}
+      />,
+    );
+    expect(screen.getByText("3 days across London and Edinburgh from Jul 24 to Jul 26.")).toBeInTheDocument();
   });
 
-  it("calls onSelect with the leg's start date when clicked", () => {
-    const onSelect = vi.fn();
-    render(<TripOverview legs={[leg({ startDate: "2026-07-24", endDate: "2026-07-26" })]} onSelect={onSelect} />);
-    fireEvent.click(screen.getByText("London", { selector: ".trip-overview-city" }));
-    expect(onSelect).toHaveBeenCalledWith("2026-07-24");
+  it("dedupes repeated cities in the intro line", () => {
+    render(
+      <TripOverview
+        legs={[
+          leg({ city: "London", startDate: "2026-07-24", endDate: "2026-07-24" }),
+          leg({ city: "Edinburgh", startDate: "2026-07-25", endDate: "2026-07-25" }),
+          leg({ city: "London", startDate: "2026-07-26", endDate: "2026-07-26" }),
+        ]}
+        totalDays={3}
+      />,
+    );
+    expect(screen.getByText(/across London and Edinburgh from/)).toBeInTheDocument();
   });
 
-  it("calls onSelect on Enter and Space, but not other keys", () => {
-    const onSelect = vi.fn();
-    render(<TripOverview legs={[leg({ startDate: "2026-07-24" })]} onSelect={onSelect} />);
-    const card = screen.getByRole("button");
+  it("uses the singular 'day' and omits the city clause when no leg has a known city", () => {
+    render(<TripOverview legs={[leg({ city: undefined })]} totalDays={1} />);
+    expect(screen.getByText("1 day from Jul 24 to Jul 24.")).toBeInTheDocument();
+  });
 
-    fireEvent.keyDown(card, { key: "A" });
-    expect(onSelect).not.toHaveBeenCalled();
-
-    fireEvent.keyDown(card, { key: "Enter" });
-    fireEvent.keyDown(card, { key: " " });
-    expect(onSelect).toHaveBeenCalledTimes(2);
-    expect(onSelect).toHaveBeenCalledWith("2026-07-24");
+  it("renders no intro line when there are no legs", () => {
+    const { container } = render(<TripOverview legs={[]} totalDays={0} />);
+    expect(container.querySelector(".trip-overview-intro")).not.toBeInTheDocument();
+    expect(container.querySelector(".trip-overview")).toBeInTheDocument();
   });
 });

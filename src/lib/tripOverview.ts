@@ -2,7 +2,8 @@ export interface DaySummary {
   date: string;
   city?: string;
   itemCount: number;
-  categoryCounts: Record<string, number>;
+  /** Resolved destination names for the day's items, in itinerary order. */
+  places: string[];
 }
 
 export interface TripLeg {
@@ -10,16 +11,19 @@ export interface TripLeg {
   startDate: string;
   endDate: string;
   itemCount: number;
-  categoryCounts: Record<string, number>;
+  /** Deduped (case-insensitive) destination names across the leg, first-seen order. */
+  places: string[];
 }
 
-function mergeCategoryCounts(
-  into: Record<string, number>,
-  from: Record<string, number>,
-): Record<string, number> {
-  const merged = { ...into };
-  for (const [category, count] of Object.entries(from)) {
-    merged[category] = (merged[category] ?? 0) + count;
+function mergePlaces(into: string[], from: string[]): string[] {
+  const seen = new Set(into.map((p) => p.toLowerCase()));
+  const merged = [...into];
+  for (const place of from) {
+    const key = place.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(place);
+    }
   }
   return merged;
 }
@@ -36,16 +40,24 @@ export function groupTripLegs(days: DaySummary[]): TripLeg[] {
     if (last && last.city === day.city) {
       last.endDate = day.date;
       last.itemCount += day.itemCount;
-      last.categoryCounts = mergeCategoryCounts(last.categoryCounts, day.categoryCounts);
+      last.places = mergePlaces(last.places, day.places);
     } else {
       legs.push({
         city: day.city,
         startDate: day.date,
         endDate: day.date,
         itemCount: day.itemCount,
-        categoryCounts: { ...day.categoryCounts },
+        places: mergePlaces([], day.places),
       });
     }
   }
   return legs;
+}
+
+/** "A" · "A and B" · "A, B, and C" — for reading a list out as prose. */
+export function joinNatural(items: string[]): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }

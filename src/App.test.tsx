@@ -222,13 +222,13 @@ describe("App", () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
-  it("switches to the trip overview and jumps to a leg's first day on selection", async () => {
+  it("switches to the trip overview and summarizes each city as prose", async () => {
     const t = trip({
       title: "Multi-city Trip",
       items: [
-        item({ id: "ldn-1", date: "2026-07-24", activity: "Arrive London", city: "London" }),
-        item({ id: "ldn-2", date: "2026-07-25", activity: "Tower Bridge", city: "London" }),
-        item({ id: "edi-1", date: "2026-07-26", activity: "Arrive Edinburgh", city: "Edinburgh" }),
+        item({ id: "ldn-1", date: "2026-07-24", activity: "Arrive London", locationName: "Heathrow Airport", city: "London" }),
+        item({ id: "ldn-2", date: "2026-07-25", activity: "Tower Bridge", locationName: "Tower Bridge", city: "London" }),
+        item({ id: "edi-1", date: "2026-07-26", activity: "Arrive Edinburgh", locationName: "Edinburgh Castle", city: "Edinburgh" }),
       ],
     });
     loadMock().mockResolvedValue(t);
@@ -242,16 +242,14 @@ describe("App", () => {
       screen.getByText("Trip overview").click();
     });
 
-    expect(screen.getByText("London")).toBeInTheDocument();
-    expect(screen.getByText("Edinburgh")).toBeInTheDocument();
-    expect(screen.getByText("Excursion 2")).toBeInTheDocument();
+    expect(screen.getByText("3 days across London and Edinburgh from Jul 24 to Jul 26.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "London" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Edinburgh" })).toBeInTheDocument();
+    expect(screen.getByText("Visiting Heathrow Airport and Tower Bridge.")).toBeInTheDocument();
+    expect(screen.getByText("Visiting Edinburgh Castle.")).toBeInTheDocument();
 
-    await act(async () => {
-      (screen.getByText("Edinburgh").closest('[role="button"]') as HTMLElement).click();
-    });
-
-    expect(screen.getByText("Arrive Edinburgh")).toBeInTheDocument();
-    expect(screen.queryByText("Back to day")).not.toBeInTheDocument();
+    // No navigation from the overview itself — only the header toggle can leave it.
+    expect(screen.queryByRole("button", { name: /London|Edinburgh/ })).not.toBeInTheDocument();
   });
 
   it("returns to day view via the header toggle without selecting a leg", async () => {

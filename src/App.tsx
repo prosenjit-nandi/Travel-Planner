@@ -4,6 +4,7 @@ import type { Trip } from "./data/types";
 import { resolveDayItems, todayISO, nearestTripDate } from "./lib/time";
 import { getDayStatus } from "./lib/schedule";
 import { cityForDay } from "./lib/weather";
+import { baseLocation } from "./lib/links";
 import { groupTripLegs, type DaySummary } from "./lib/tripOverview";
 import { StatusBanner } from "./components/StatusBanner";
 import { DayNav } from "./components/DayNav";
@@ -59,11 +60,10 @@ export default function App() {
     if (!trip) return [];
     const daySummaries: DaySummary[] = tripDates.map((date) => {
       const items = trip.items.filter((i) => i.date === date);
-      const categoryCounts: Record<string, number> = {};
-      for (const item of items) {
-        categoryCounts[item.category] = (categoryCounts[item.category] ?? 0) + 1;
-      }
-      return { date, city: cityForDay(items), itemCount: items.length, categoryCounts };
+      const places = items
+        .map((item) => baseLocation(item))
+        .filter((place): place is string => Boolean(place));
+      return { date, city: cityForDay(items), itemCount: items.length, places };
     });
     return groupTripLegs(daySummaries);
   }, [trip, tripDates]);
@@ -93,13 +93,7 @@ export default function App() {
       </header>
 
       {view === "overview" ? (
-        <TripOverview
-          legs={tripLegs}
-          onSelect={(date) => {
-            setSelectedDate(date);
-            setView("day");
-          }}
-        />
+        <TripOverview legs={tripLegs} totalDays={tripDates.length} />
       ) : (
         <>
           <DayNav
