@@ -5,7 +5,7 @@ import { resolveDayItems, todayISO, defaultTripDate } from "./lib/time";
 import { getDayStatus } from "./lib/schedule";
 import { cityForDay } from "./lib/weather";
 import { baseLocation } from "./lib/links";
-import { groupTripLegs, type DaySummary, type PlaceEntry, getCategoryPriority, isAirportOrFlight } from "./lib/tripOverview";
+import { groupTripLegs, type DaySummary, type PlaceEntry, getCategoryPriority, isAirportOrFlight, extractSubLocations } from "./lib/tripOverview";
 import { StatusBanner } from "./components/StatusBanner";
 import { DayNav } from "./components/DayNav";
 import { DayWeather } from "./components/DayWeather";
@@ -107,6 +107,20 @@ export default function App() {
           category: bestItem.category,
           activity: bestItem.activity
         });
+
+        // Extract sub-locations from notes for Excursions to enrich the visiting details and photos
+        if (bestItem.category.trim().toLowerCase() === "excursion") {
+          const subLocs = extractSubLocations(bestItem.notes);
+          for (const subLoc of subLocs) {
+            if (!places.some(p => p.name.trim().toLowerCase() === subLoc.toLowerCase())) {
+              places.push({
+                name: subLoc,
+                category: "Excursion",
+                activity: ""
+              });
+            }
+          }
+        }
       }
       return { date, city: cityForDay(items), itemCount: items.length, places };
     });

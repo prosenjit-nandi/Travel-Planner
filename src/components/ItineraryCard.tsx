@@ -5,6 +5,8 @@ import { formatTime } from "../lib/time";
 import { googleMapsUrl, uberUrl } from "../lib/links";
 import { ItemThumbnail } from "./ItemThumbnail";
 import { TravelEstimate } from "./TravelEstimate";
+import { extractSubLocations } from "../lib/tripOverview";
+import { Thumbnail } from "./Thumbnail";
 
 interface Props {
   item: ResolvedItem;
@@ -39,6 +41,7 @@ export function ItineraryCard({ item, timeState, region, timeZone, showDeviceTim
   const uber = uberUrl(item, region);
   const catClass = CATEGORY_CLASS[item.category] ?? "cat-other";
   const hasDetail = Boolean(item.notes || item.address || item.confirmationNumber);
+  const subLocations = extractSubLocations(item.notes);
 
   // Only ever wired up to a button that's rendered exclusively inside the
   // `item.confirmationNumber &&` block below, so the value is always set here.
@@ -81,6 +84,14 @@ export function ItineraryCard({ item, timeState, region, timeZone, showDeviceTim
         )}
 
         {item.locationName && <div className="item-location">{item.locationName}</div>}
+
+        {subLocations.length > 0 && (
+          <div className="trip-overview-photo-strip" style={{ marginTop: "8px", marginBottom: "4px" }}>
+            {subLocations.map((subLoc) => (
+              <Thumbnail key={subLoc} query={subLoc} className="trip-overview-place-photo" />
+            ))}
+          </div>
+        )}
 
         {expanded && (
           <div className="item-detail">

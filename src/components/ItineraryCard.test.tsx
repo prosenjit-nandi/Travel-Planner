@@ -15,6 +15,15 @@ vi.mock("./ItemThumbnail", () => ({
   ItemThumbnail: () => null,
 }));
 
+vi.mock("./Thumbnail", () => ({
+  Thumbnail: ({ query, className }: { query: string; className: string }) => (
+    <div data-testid="thumbnail" className={className}>
+      {query}
+    </div>
+  ),
+}));
+
+
 function resolvedItem(overrides: Partial<ResolvedItem> = {}): ResolvedItem {
   return {
     id: "1",
@@ -170,4 +179,21 @@ describe("ItineraryCard", () => {
     );
     expect(screen.queryByTestId("travel-estimate")).not.toBeInTheDocument();
   });
+
+  it("renders a photo strip for sub-locations extracted from notes", () => {
+    render(
+      <ul>
+        <ItineraryCard
+          item={resolvedItem({
+            notes: "Big Ben\nWestminster Abbey\nLondon Eye",
+          })}
+          timeState="future"
+          timeZone="UTC"
+        />
+      </ul>,
+    );
+    const thumbnails = screen.getAllByTestId("thumbnail");
+    expect(thumbnails.map((t) => t.textContent)).toEqual(["Big Ben", "Westminster Abbey", "London Eye"]);
+  });
 });
+

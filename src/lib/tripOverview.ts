@@ -45,6 +45,90 @@ export function isAirportOrFlight(name: string, activity: string): boolean {
   });
 }
 
+const EXCLUDED_WORDS = new Set([
+  "london", "edinburgh", "scotland", "england", "united kingdom", "uk", 
+  "central london", "city of westminster", "old town", "hidden closes", 
+  "souvenir shopping", "leisure travel"
+]);
+
+function isGenericOrInstruction(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+
+  // Proper nouns (places, landmarks) must start with an uppercase letter or a digit (e.g., "354 Castlehill")
+  const firstChar = trimmed[0];
+  if (firstChar === firstChar.toLowerCase() && !/^\d/.test(firstChar)) {
+    return true;
+  }
+
+  const t = trimmed.toLowerCase();
+  if (t.length < 3 || t.length > 55) return true;
+  if (EXCLUDED_WORDS.has(t)) return true;
+  
+  // Headers/instructions ending in colon
+  if (t.includes(":")) return true;
+  
+  // Timeline / time patterns
+  if (/\b\d{1,2}:\d{2}\b/.test(t) || /\b(am|pm)\b/.test(t)) return true;
+
+  // Block common instruction/action verbs at the start of a sentence
+  if (/^(bring|eat|ask|get|go|take|return|checkout|check|book|reserve|meet|walk|stroll|hike|travel|grab|collect)\b/i.test(t)) {
+    return true;
+  }
+  
+  // Instructions or non-location terms
+  const patterns = [
+    "best", "spot", "viewing", "note", "flow", "tips", "important", "warning",
+    "timeline", "suggested", "check", "checkout", "reserve", "reservation",
+    "need", "must", "cost", "price", "ticket", "book", "tour", "timeline",
+    "includes", "including", "explore", "exploring", "visit", "visiting",
+    "lunch", "dinner", "breakfast", "brunch", "coffee", "drink", "food",
+    "hotel", "stay", "accommodation", "airport", "flight", "return", "travel"
+  ];
+  return patterns.some((p) => t.includes(p));
+}
+
+
+/** Parses notes to extract distinct sightseeing destinations/sub-locations. */
+export function extractSubLocations(notes?: string): string[] {
+  if (!notes) return [];
+  const subLocations: string[] = [];
+  const lines = notes.split("\n");
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+    
+    // Check if it is a comma-separated list of items on a single line
+    let segments = [trimmedLine];
+    if (trimmedLine.includes(",") && !trimmedLine.includes(":") && !/\b\d{1,2}:\d{2}\b/.test(trimmedLine)) {
+      segments = trimmedLine.split(",").map(s => s.trim());
+    }
+    
+    for (let seg of segments) {
+      // Strip bullets and list numbers at the start
+      seg = seg.replace(/^[•\t\*\-\s\d\.\)]+/, "").trim();
+      
+      // Clean up common parenthetical suffixes
+      seg = seg
+        .replace(/\(pass by\)/i, "")
+        .replace(/\(need reservation\)/i, "")
+        .replace(/\(convenient during.*\)/i, "")
+        .replace(/\(great light\)/i, "")
+        .replace(/\(excellent Scottish.*\)/i, "")
+        .replace(/\?+/g, "") // strip question marks
+        .trim();
+        
+      if (!isGenericOrInstruction(seg)) {
+        subLocations.push(seg);
+      }
+    }
+  }
+  
+  return [...new Set(subLocations)];
+}
+
+
 export interface TripLeg {
   city?: string;
   startDate: string;
