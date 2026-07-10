@@ -8,11 +8,14 @@ vi.mock("./data/activeTrip", () => ({
   activeDataSource: { load: vi.fn() },
 }));
 
-// Prevents ItineraryCard's next-item travel estimate from firing real
-// geocoding network calls during these integration tests; it's covered on
-// its own in TravelEstimate.test.tsx.
+// Prevents ItineraryCard's next-item travel estimate and thumbnail from
+// firing real network calls during these integration tests; both are
+// covered on their own in TravelEstimate.test.tsx and ItemThumbnail.test.tsx.
 vi.mock("./lib/travelEstimate", () => ({
   estimateTimeToNext: vi.fn().mockResolvedValue(null),
+}));
+vi.mock("./lib/photo", () => ({
+  photoFor: vi.fn().mockResolvedValue(null),
 }));
 
 function item(overrides: Partial<ItineraryItem>): ItineraryItem {

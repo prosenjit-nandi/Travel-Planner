@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ItineraryItem } from "../data/types";
-import { googleMapsUrl, locationQuery, uberUrl } from "./links";
+import { baseLocation, googleMapsUrl, locationQuery, uberUrl } from "./links";
 
 function item(overrides: Partial<ItineraryItem> = {}): ItineraryItem {
   return {
@@ -72,6 +72,21 @@ describe("googleMapsUrl", () => {
     );
     expect(url).toContain(encodeURIComponent("123 Main St"));
     expect(url).not.toContain(encodeURIComponent("United Kingdom"));
+  });
+});
+
+describe("baseLocation", () => {
+  it("does not carry city/region context — just the destination name", () => {
+    // Confirms baseLocation stays free of city/region text: Wikipedia's
+    // search ranks "British Museum, London, United Kingdom" against the
+    // generic "London" page instead of "British Museum", so photo lookups
+    // rely on this staying bare while locationQuery adds that context back
+    // on top for Maps/Uber.
+    expect(baseLocation(item({ locationName: "British Museum", city: "London" }))).toBe("British Museum");
+  });
+
+  it("returns null when there is nothing usable", () => {
+    expect(baseLocation(item({ locationName: "" }))).toBeNull();
   });
 });
 

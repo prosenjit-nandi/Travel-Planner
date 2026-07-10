@@ -11,6 +11,10 @@ vi.mock("./TravelEstimate", () => ({
   ),
 }));
 
+vi.mock("./ItemThumbnail", () => ({
+  ItemThumbnail: () => null,
+}));
+
 function resolvedItem(overrides: Partial<ResolvedItem> = {}): ResolvedItem {
   return {
     id: "1",

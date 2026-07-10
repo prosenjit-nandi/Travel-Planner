@@ -222,6 +222,15 @@
   margin-top: 2px;
 }
 
+.item-thumbnail {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--border);
+}
+
 .item-body {
   flex: 1 1 auto;
   min-width: 0;

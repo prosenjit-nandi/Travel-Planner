@@ -41,18 +41,13 @@ function isGenericLocationName(value: string, category: string): boolean {
 }
 
 /**
- * Builds the Maps/Uber search query for an item.
- *
- * A precise `address` is trusted as-is (it's already unambiguous). Between
- * `locationName` and `notes`, whichever one isn't a generic placeholder like
- * "Hotel" or "Taxi" wins — sheets often leave Location vague and put the
- * actual venue in Notes instead. "Waterloo Station" or "The Ivy" resolve to
- * a same-named place elsewhere unless the search is anchored with
- * city/country context, so those are appended when known and not already
- * implied by the name itself (avoids "Edinburgh Castle, Edinburgh,
- * Edinburgh"-style repeats).
+ * Resolves the best destination name for an item, before any city/region
+ * disambiguation is appended: a precise `address` when present, otherwise
+ * whichever of `locationName`/`notes` isn't a generic placeholder like
+ * "Hotel" or "Taxi" — sheets often leave Location vague and put the actual
+ * venue in Notes instead.
  */
-export function locationQuery(item: ItineraryItem, region?: string): string | null {
+export function baseLocation(item: ItineraryItem): string | null {
   const address = item.address?.trim();
   if (address) return address;
 
@@ -63,8 +58,23 @@ export function locationQuery(item: ItineraryItem, region?: string): string | nu
     notes.length > 0 &&
     !isGenericLocationName(notes, item.category);
 
-  const name = preferNotes ? notes : locationName;
+  return (preferNotes ? notes : locationName) || null;
+}
+
+/**
+ * Builds the Maps/Uber search query for an item.
+ *
+ * "Waterloo Station" or "The Ivy" resolve to a same-named place elsewhere
+ * unless the search is anchored with city/country context, so those are
+ * appended when known and not already implied by the name itself (avoids
+ * "Edinburgh Castle, Edinburgh, Edinburgh"-style repeats). A precise
+ * `address` (from `baseLocation`) is left as-is, since it's already
+ * unambiguous.
+ */
+export function locationQuery(item: ItineraryItem, region?: string): string | null {
+  const name = baseLocation(item);
   if (!name) return null;
+  if (item.address?.trim()) return name;
 
   const parts = [name];
 

@@ -3,6 +3,7 @@ import type { MouseEvent } from "react";
 import type { ResolvedItem } from "../lib/time";
 import { formatTime } from "../lib/time";
 import { googleMapsUrl, uberUrl } from "../lib/links";
+import { ItemThumbnail } from "./ItemThumbnail";
 import { TravelEstimate } from "./TravelEstimate";
 
 interface Props {
@@ -55,6 +56,7 @@ export function ItineraryCard({ item, timeState, region, timeZone, showDeviceTim
         <span>{formatTime(item.end, timeZone)}</span>
         {showDeviceTime && <span className="item-time-device">{formatTime(item.start)} local</span>}
       </div>
+      <ItemThumbnail item={item} />
       <div className="item-body">
         {hasDetail ? (
           <button

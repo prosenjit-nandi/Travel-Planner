@@ -14,9 +14,10 @@ A personal trip-itinerary companion, installable on iPhone as a home-screen app 
 - **Jump to today** — a "Today" button appears in the day nav whenever you've browsed away from the current day.
 - **Trip overview** — a condensed view grouping consecutive same-city days into legs (e.g. "London, Jul 24–26"), so a multi-city trip's shape is visible at a glance; tap a leg to jump to its first day.
 - **Tap-to-expand detail** — notes, a precise address, and a booking confirmation number (with a copy button) stay tucked under the card until tapped, so the compact view doesn't get crowded.
+- **Thumbnail** — a small photo of the destination, when Wikipedia has one for it. Works well for named landmarks, museums, stations, and cities; a restaurant, hotel, or plain street address usually won't have a match, so most day-to-day items simply won't show one — that's expected, not a bug.
 - **Installable** — add it to your iPhone home screen and it runs full-screen, offline-capable, no App Store needed.
 
-Weather and travel estimates call two free, no-API-key services directly from the client: [Open-Meteo](https://open-meteo.com) for forecasts, and [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org) to geocode place names. Geocoding results are cached indefinitely in `localStorage` (a venue's coordinates never change) and requests are serialized rather than fired in parallel, out of courtesy to Nominatim's shared public instance.
+Weather, travel estimates, and thumbnails call three free, no-API-key services directly from the client: [Open-Meteo](https://open-meteo.com) for forecasts, [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org) to geocode place names, and the [Wikipedia API](https://en.wikipedia.org/w/api.php) for thumbnails. Geocoding results are cached indefinitely in `localStorage` (a venue's coordinates never change) and requests are serialized rather than fired in parallel, out of courtesy to Nominatim's shared public instance.
 
 ## Live site
 
