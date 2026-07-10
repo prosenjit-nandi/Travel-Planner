@@ -80,6 +80,7 @@ export default function App() {
               key={item.id}
               item={item}
               timeState={isToday ? timeState : "future"}
+              region={trip.region}
             />
           );
         })}

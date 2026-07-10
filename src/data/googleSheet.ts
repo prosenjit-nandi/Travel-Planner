@@ -32,6 +32,7 @@ function rowsToItems(rows: string[][]): ItineraryItem[] {
   const endIdx = col("End Time");
   const activityIdx = col("Activity");
   const locationIdx = col("Location");
+  const cityIdx = col("City");
   const categoryIdx = col("Category");
   const notesIdx = col("Notes");
 
@@ -52,6 +53,7 @@ function rowsToItems(rows: string[][]): ItineraryItem[] {
     const rawCategory = cells[categoryIdx]?.trim() ?? "";
     const category = CATEGORY_FIXES[rawCategory] ?? rawCategory;
     const notes = cells[notesIdx]?.trim();
+    const city = cells[cityIdx]?.trim();
 
     const seq = (seqByDate.get(date) ?? 0) + 1;
     seqByDate.set(date, seq);
@@ -63,6 +65,7 @@ function rowsToItems(rows: string[][]): ItineraryItem[] {
       endTime,
       activity,
       locationName: cells[locationIdx]?.trim() ?? "",
+      ...(city ? { city } : {}),
       category,
       ...(notes ? { notes } : {}),
     });
@@ -75,6 +78,8 @@ export interface GoogleSheetTripConfig {
   id: string;
   title: string;
   timezone: string;
+  /** Country/region used to disambiguate Maps/Uber queries; see Trip.region. */
+  region?: string;
   /** Same-origin proxy endpoint (a Cloudflare Pages Function) that holds the
    * Google service-account credentials and returns { values: string[][] }
    * for the sheet. The sheet itself is never shared publicly. */
@@ -96,6 +101,7 @@ export function googleSheetTripSource(config: GoogleSheetTripConfig): ItineraryD
         id: config.id,
         title: config.title,
         timezone: config.timezone,
+        region: config.region,
         items: rowsToItems(values),
       };
     },

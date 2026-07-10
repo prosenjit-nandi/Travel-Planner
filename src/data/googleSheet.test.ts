@@ -77,6 +77,39 @@ describe("googleSheetTripSource", () => {
     });
   });
 
+  it("parses an optional City column into item.city, used to disambiguate Maps/Uber queries", async () => {
+    mockFetch({
+      values: [
+        [...HEADER.slice(0, 4), "Location", "City", "Category", "Notes"],
+        ["7/25/2026", "8:30:00 AM", "10:00:00 AM", "Hotel Check In", "Waterloo Station", "London", "Transport", ""],
+      ],
+    });
+    const trip = await makeSource().load();
+    expect(trip.items[0].city).toBe("London");
+  });
+
+  it("omits city when the City column is absent or blank", async () => {
+    mockFetch({
+      values: [HEADER, ["7/25/2026", "8:30:00 AM", "10:00:00 AM", "Hotel Check In", "Waterloo Station", "Transport", ""]],
+    });
+    const trip = await makeSource().load();
+    expect(trip.items[0]).not.toHaveProperty("city");
+  });
+
+  it("passes the configured region through to the loaded trip", async () => {
+    mockFetch({ values: [HEADER] });
+    const source = googleSheetTripSource({
+      id: "trip-1",
+      title: "Test Trip",
+      timezone: "Europe/London",
+      region: "United Kingdom",
+      endpoint: "/api/itinerary",
+      token: "test-token",
+    });
+    const trip = await source.load();
+    expect(trip.region).toBe("United Kingdom");
+  });
+
   it("omits the notes field when the Notes cell is blank", async () => {
     mockFetch({
       values: [HEADER, ["7/25/2026", "8:30:00 AM", "10:00:00 AM", "Lunch", "Soho", "Dining", "  "]],

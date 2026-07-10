@@ -5,6 +5,7 @@ import { googleMapsUrl, uberUrl } from "../lib/links";
 interface Props {
   item: ResolvedItem;
   timeState: "past" | "current" | "future";
+  region?: string;
 }
 
 const CATEGORY_CLASS: Record<string, string> = {
@@ -14,9 +15,9 @@ const CATEGORY_CLASS: Record<string, string> = {
   Excursion: "cat-excursion",
 };
 
-export function ItineraryCard({ item, timeState }: Props) {
-  const maps = googleMapsUrl(item);
-  const uber = uberUrl(item);
+export function ItineraryCard({ item, timeState, region }: Props) {
+  const maps = googleMapsUrl(item, region);
+  const uber = uberUrl(item, region);
   const catClass = CATEGORY_CLASS[item.category] ?? "cat-other";
 
   return (

@@ -49,11 +49,18 @@ Itinerary data lives behind the `ItineraryDataSource` interface (`src/data/types
 
 Each itinerary item needs a date, start/end time, activity, and either a `locationName` or a precise `address` (used for the Maps/Uber links).
 
+### Getting the right destination in Maps/Uber
+
+A bare venue name like "Waterloo Station" or "The Ivy" isn't unique — Maps/Uber can resolve it to a same-named place in a different city or country. To keep links anchored to the right place:
+
+- Prefer a precise `address` when you have one; it's used as-is, with no disambiguation applied.
+- Otherwise, set `Trip.region` (e.g. `"United Kingdom"`) once for the whole trip, and optionally `city` per item (e.g. `"Edinburgh"`, via a `City` column in the Google Sheet) for venues whose name alone isn't unique even within the country. Both are appended to the `locationName` query, skipped if already implied by the name, so results stay anchored without duplicating text like "Edinburgh Castle, Edinburgh, Edinburgh".
+
 ## Live Google Sheet integration
 
 The itinerary is fetched from a Google Sheet the trip owner edits directly. The sheet is **never shared publicly** — a Cloudflare Pages Function (`functions/api/itinerary.ts`) holds a Google service-account credential, authenticates to the Sheets API server-side, and serves the data as JSON to the client, gated by a shared-secret token.
 
-Column headers the sheet must have: `Date`, `Start Time`, `End Time`, `Activity`, `Location`, `Category`, `Notes` (any other columns, e.g. cost tracking, are ignored).
+Column headers the sheet must have: `Date`, `Start Time`, `End Time`, `Activity`, `Location`, `Category`, `Notes`. An optional `City` column feeds `item.city` (see above); any other columns, e.g. cost tracking, are ignored.
 
 ### One-time Google Cloud setup
 

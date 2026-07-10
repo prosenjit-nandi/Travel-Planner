@@ -56,4 +56,20 @@ describe("ItineraryCard", () => {
     expect(screen.queryByText("Maps")).not.toBeInTheDocument();
     expect(screen.queryByText("Uber")).not.toBeInTheDocument();
   });
+
+  it("anchors the Maps/Uber links with the trip's region", () => {
+    render(
+      <ul>
+        <ItineraryCard
+          item={resolvedItem({ locationName: "Waterloo Station", city: "London" })}
+          timeState="future"
+          region="United Kingdom"
+        />
+      </ul>,
+    );
+    expect(screen.getByText("Maps")).toHaveAttribute(
+      "href",
+      expect.stringContaining(encodeURIComponent("Waterloo Station, London, United Kingdom")),
+    );
+  });
 });

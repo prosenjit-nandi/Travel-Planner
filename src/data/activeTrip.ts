@@ -7,6 +7,7 @@ const liveSource = googleSheetTripSource({
   id: "uk-2026",
   title: "UK & Scotland Trip 2026",
   timezone: "Europe/London",
+  region: "United Kingdom",
   endpoint: "/api/itinerary",
   token: import.meta.env.VITE_ITINERARY_PROXY_TOKEN,
 });
