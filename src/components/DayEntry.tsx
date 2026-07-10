@@ -5,27 +5,72 @@ import { formatDayLabel } from "../lib/time";
 import { forecastFor, weatherLabel, type DayForecast } from "../lib/weather";
 import { Thumbnail } from "./Thumbnail";
 
-/** Maps a place entry to a human-readable action prefix. */
+/** Maps a place entry to a human-readable action prefix for non-airport locations. */
 function placeLabel(entry: PlaceEntry): string {
   const cat = entry.category.trim().toLowerCase();
   if (cat === "accommodation" || cat === "accomodation") return "Staying at";
   if (cat === "dining" || cat === "restaurant" || cat === "cafe") return "Dining at";
-  if (isAirportOrFlight(entry.name, entry.activity)) return "Flying from";
   return "Visiting";
 }
 
 /**
- * Groups place entries by their label ("Visiting", "Staying at", etc.)
- * and returns ordered clauses like ["Visiting X and Y", "Staying at Z"].
+ * Groups place entries by their label and returns ordered clauses.
+ * Visiting places go first, hotels (Staying at) go last.
+ * Flight entries are detected and formatted chronologically as "Flying from X to Y".
  */
 function placeClauses(places: PlaceEntry[]): string[] {
+  const airportEntries = places.filter((p) => isAirportOrFlight(p.name, p.activity));
+  const nonAirportEntries = places.filter((p) => !isAirportOrFlight(p.name, p.activity));
+
   const buckets = new Map<string, string[]>();
-  for (const p of places) {
+  for (const p of nonAirportEntries) {
     const label = placeLabel(p);
     if (!buckets.has(label)) buckets.set(label, []);
     buckets.get(label)!.push(p.name);
   }
-  return Array.from(buckets.entries()).map(([label, names]) => `${label} ${joinNatural(names)}`);
+
+  const clauses: string[] = [];
+
+  // 1. Visiting (Excursions / Sights) - First
+  const visitingNames = buckets.get("Visiting") || [];
+  if (visitingNames.length > 0) {
+    clauses.push(`Visiting ${joinNatural(visitingNames)}`);
+  }
+
+  // 2. Dining at
+  const diningNames = buckets.get("Dining at") || [];
+  if (diningNames.length > 0) {
+    clauses.push(`Dining at ${joinNatural(diningNames)}`);
+  }
+
+  // 3. Flying from / into
+  if (airportEntries.length === 2) {
+    clauses.push(`Flying from ${airportEntries[0].name} to ${airportEntries[1].name}`);
+  } else if (airportEntries.length === 1) {
+    const p = airportEntries[0];
+    const combined = `${p.name} ${p.activity}`.toLowerCase();
+    const isArrival = ["arrive", "arrival", "incoming", "landing", "into"].some((kw) => combined.includes(kw));
+    const verb = isArrival ? "Flying into" : "Flying from";
+    clauses.push(`${verb} ${p.name}`);
+  } else if (airportEntries.length > 2) {
+    const names = airportEntries.map((p) => p.name);
+    clauses.push(`Flying from ${joinNatural(names)}`);
+  }
+
+  // 4. Staying at (Hotels / Accommodation) - Last
+  const stayingNames = buckets.get("Staying at") || [];
+  if (stayingNames.length > 0) {
+    clauses.push(`Staying at ${joinNatural(stayingNames)}`);
+  }
+
+  // Catch-all for any other unexpected labels
+  for (const [label, names] of buckets.entries()) {
+    if (label !== "Visiting" && label !== "Dining at" && label !== "Staying at") {
+      clauses.push(`${label} ${joinNatural(names)}`);
+    }
+  }
+
+  return clauses;
 }
 
 export function DayEntry({ day }: { day: DaySummary }) {

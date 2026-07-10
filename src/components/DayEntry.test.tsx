@@ -78,6 +78,27 @@ describe("DayEntry", () => {
       expect(screen.getByText("Flying from Edinburgh Airport.")).toBeInTheDocument();
     });
 
+    it("labels arrival airport activities as 'Flying into'", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Heathrow Airport", category: "Transport", activity: "Arrive Heathrow and pick luggage" }] })} />);
+      expect(screen.getByText("Flying into Heathrow Airport.")).toBeInTheDocument();
+    });
+
+    it("labels pairs of airports as 'Flying from X to Y'", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(
+        <DayEntry
+          day={day({
+            places: [
+              { name: "Heathrow Airport (LHR)", category: "Transport", activity: "Flight to EDI" },
+              { name: "Edinburgh Airport (EDI)", category: "Transport", activity: "Arrive EDI" },
+            ],
+          })}
+        />,
+      );
+      expect(screen.getByText("Flying from Heathrow Airport (LHR) to Edinburgh Airport (EDI).")).toBeInTheDocument();
+    });
+
     it("falls back to 'Visiting' for non-airport transport categories in test day objects", async () => {
       vi.mocked(forecastFor).mockResolvedValue(null);
       render(<DayEntry day={day({ places: [{ name: "Some Place", category: "Transport", activity: "Get there somehow" }] })} />);
@@ -85,16 +106,16 @@ describe("DayEntry", () => {
     });
   });
 
-  it("groups multiple places by type into separate labeled clauses", async () => {
+  it("groups multiple places by type into separate labeled clauses (Visiting first, Staying last)", async () => {
     vi.mocked(forecastFor).mockResolvedValue(null);
     render(
       <DayEntry
         day={day({
           places: [
-            { name: "British Museum", category: "Excursion", activity: "Visit" },
-            { name: "Big Ben", category: "Excursion", activity: "Photo stop" },
-            { name: "The Ivy", category: "Dining", activity: "Lunch" },
             { name: "The Savoy", category: "Accommodation", activity: "Check in" },
+            { name: "British Museum", category: "Excursion", activity: "Visit" },
+            { name: "The Ivy", category: "Dining", activity: "Lunch" },
+            { name: "Big Ben", category: "Excursion", activity: "Photo stop" },
           ],
         })}
       />,
