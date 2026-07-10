@@ -92,6 +92,9 @@ node -e "process.stdout.write(require('/path/to/key.json').private_key)" | npx w
 # a random token only your own client sends; not a real secret since it ships in the JS bundle, just a deterrent against random crawlers hitting the endpoint
 node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
 npx wrangler pages secret put ITINERARY_PROXY_TOKEN --project-name travel-planner-uk   # paste the value printed above
+
+# the spreadsheet ID from the sheet's URL (https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit)
+npx wrangler pages secret put SHEET_ID --project-name travel-planner-uk
 ```
 
 The same `ITINERARY_PROXY_TOKEN` value needs to be available to the client build too. Add it to a local `.env.local` (already gitignored via `*.local`):

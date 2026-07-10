@@ -2,9 +2,9 @@ interface Env {
   GOOGLE_SERVICE_ACCOUNT_EMAIL: string;
   GOOGLE_SERVICE_ACCOUNT_KEY: string;
   ITINERARY_PROXY_TOKEN: string;
+  SHEET_ID: string;
 }
 
-const SHEET_ID = "1Debf-8Bn0FiQmmaxNOXouH0e0wsG9UDd1N2o6oorSA8";
 const SHEET_GID = 839733258;
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
 
@@ -60,9 +60,9 @@ async function getAccessToken(email: string, pemKey: string): Promise<string> {
   return data.access_token;
 }
 
-async function resolveSheetTitle(accessToken: string): Promise<string> {
+async function resolveSheetTitle(accessToken: string, sheetId: string): Promise<string> {
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
   if (!res.ok) {
@@ -72,14 +72,14 @@ async function resolveSheetTitle(accessToken: string): Promise<string> {
     sheets: { properties: { sheetId: number; title: string } }[];
   };
   const sheet = data.sheets.find((s) => s.properties.sheetId === SHEET_GID);
-  if (!sheet) throw new Error(`No tab with gid ${SHEET_GID} in spreadsheet ${SHEET_ID}`);
+  if (!sheet) throw new Error(`No tab with gid ${SHEET_GID} in spreadsheet ${sheetId}`);
   return sheet.properties.title;
 }
 
-async function fetchValues(accessToken: string, title: string): Promise<string[][]> {
+async function fetchValues(accessToken: string, sheetId: string, title: string): Promise<string[][]> {
   const range = encodeURIComponent(`'${title}'!A:Z`);
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
   if (!res.ok) {
@@ -102,8 +102,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, waitUntil
   let values: string[][];
   try {
     const accessToken = await getAccessToken(env.GOOGLE_SERVICE_ACCOUNT_EMAIL, env.GOOGLE_SERVICE_ACCOUNT_KEY);
-    const title = await resolveSheetTitle(accessToken);
-    values = await fetchValues(accessToken, title);
+    const title = await resolveSheetTitle(accessToken, env.SHEET_ID);
+    values = await fetchValues(accessToken, env.SHEET_ID, title);
   } catch (err) {
     return new Response(`Upstream fetch failed: ${err instanceof Error ? err.message : String(err)}`, {
       status: 502,

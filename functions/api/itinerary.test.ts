@@ -31,6 +31,7 @@ function makeEnv(overrides: Partial<Record<string, string>> = {}) {
     GOOGLE_SERVICE_ACCOUNT_EMAIL: "test@example.iam.gserviceaccount.com",
     GOOGLE_SERVICE_ACCOUNT_KEY: testPem,
     ITINERARY_PROXY_TOKEN: "correct-token",
+    SHEET_ID: "test-sheet-id",
     ...overrides,
   };
 }

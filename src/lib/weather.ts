@@ -83,9 +83,6 @@ function detectCityFromText(text: string): string | undefined {
   if (t.includes("jfk") || t.includes("john f. kennedy") || t.includes("new york")) {
     return "New York";
   }
-  if (t.includes("hamilton")) {
-    return "Hamilton";
-  }
   return undefined;
 }
 
