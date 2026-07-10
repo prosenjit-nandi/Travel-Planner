@@ -143,9 +143,10 @@ export async function forecastFor(city: string, dateStr: string): Promise<DayFor
       `https://api.open-meteo.com/v1/forecast?latitude=${point.lat}&longitude=${point.lon}` +
       `&daily=weathercode,temperature_2m_max,temperature_2m_min,sunrise,sunset,wind_speed_10m_max,precipitation_probability_max` +
       `&hourly=cloud_cover,precipitation,precipitation_probability&timezone=auto` +
-      `&start_date=${dateStr}&end_date=${dateStr}`;
+      `&start_date=${dateStr}&end_date=${dateStr}&models=gfs_seamless`;
     const res = await fetch(url);
     if (!res.ok) return null;
+
     const data = (await res.json()) as {
       daily?: {
         weathercode?: number[];
