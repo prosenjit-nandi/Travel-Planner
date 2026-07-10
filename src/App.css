@@ -123,7 +123,9 @@
 
 .trip-overview-city {
   margin: 0;
-  font-size: 17px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .trip-overview-dates {
@@ -132,10 +134,49 @@
   color: var(--text-muted);
 }
 
+.trip-overview-day {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.trip-overview-day:first-of-type {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.trip-overview-day-date {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
 .trip-overview-narrative {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: 14px;
   line-height: 1.55;
+  font-style: italic;
+}
+
+.trip-overview-photo-strip {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-bottom: 2px;
+  overflow-x: auto;
+}
+
+.trip-overview-place-photo {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--border);
 }
 
 .status-banner {

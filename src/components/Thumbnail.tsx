@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { photoForQuery } from "../lib/photo";
 
-export function LegThumbnail({ query }: { query: string }) {
+interface Props {
+  query: string;
+  className: string;
+}
+
+/** A small photo for a place name, via Wikipedia search. Renders nothing on
+ * a miss or a broken image — reused for both the trip overview's per-city
+ * hero banner and its per-day place gallery. */
+export function Thumbnail({ query, className }: Props) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -19,13 +27,5 @@ export function LegThumbnail({ query }: { query: string }) {
 
   if (!photoUrl || failed) return null;
 
-  return (
-    <img
-      className="trip-overview-thumbnail"
-      src={photoUrl}
-      alt=""
-      loading="lazy"
-      onError={() => setFailed(true)}
-    />
-  );
+  return <img className={className} src={photoUrl} alt="" loading="lazy" onError={() => setFailed(true)} />;
 }

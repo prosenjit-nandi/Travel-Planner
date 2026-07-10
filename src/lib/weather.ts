@@ -36,9 +36,28 @@ function daysFromToday(dateStr: string): number {
   return Math.round((target.getTime() - startOfToday.getTime()) / 86_400_000);
 }
 
-/** First itinerary item for the day that names a city, used as the forecast anchor. */
+/**
+ * The day's primary city — whichever named city most of that day's items
+ * agree on, not just the first one mentioned (a day that starts with an
+ * airport transfer tagged to the arrival city shouldn't out-vote three
+ * excursions tagged to where you actually spent the day).
+ */
 export function cityForDay(items: ItineraryItem[]): string | undefined {
-  return items.find((i) => i.city?.trim())?.city;
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    const city = item.city?.trim();
+    if (city) counts.set(city, (counts.get(city) ?? 0) + 1);
+  }
+
+  let best: string | undefined;
+  let bestCount = 0;
+  for (const [city, count] of counts) {
+    if (count > bestCount) {
+      best = city;
+      bestCount = count;
+    }
+  }
+  return best;
 }
 
 /**

@@ -4,7 +4,11 @@ import type { TripLeg } from "../lib/tripOverview";
 import { TripOverview } from "./TripOverview";
 
 vi.mock("./LegSummary", () => ({
-  LegSummary: ({ leg }: { leg: TripLeg }) => <li data-testid="leg-summary">{leg.city ?? "Location TBD"}</li>,
+  LegSummary: ({ leg, fallbackLabel }: { leg: TripLeg; fallbackLabel?: string }) => (
+    <li data-testid="leg-summary" data-fallback={fallbackLabel}>
+      {leg.city ?? "Location TBD"}
+    </li>
+  ),
 }));
 
 function leg(overrides: Partial<TripLeg> = {}): TripLeg {
@@ -13,7 +17,7 @@ function leg(overrides: Partial<TripLeg> = {}): TripLeg {
     startDate: "2026-07-24",
     endDate: "2026-07-24",
     itemCount: 1,
-    places: ["British Museum"],
+    days: [],
     ...overrides,
   };
 }
@@ -27,6 +31,11 @@ describe("TripOverview", () => {
       />,
     );
     expect(screen.getAllByTestId("leg-summary")).toHaveLength(2);
+  });
+
+  it("passes the fallback label through to each leg summary", () => {
+    render(<TripOverview legs={[leg()]} totalDays={1} fallbackLabel="United Kingdom" />);
+    expect(screen.getByTestId("leg-summary")).toHaveAttribute("data-fallback", "United Kingdom");
   });
 
   it("renders an intro line summarizing days, cities, and dates", () => {

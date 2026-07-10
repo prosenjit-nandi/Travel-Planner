@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { activeDataSource } from "./data/activeTrip";
 import type { Trip } from "./data/types";
-import { resolveDayItems, todayISO, nearestTripDate } from "./lib/time";
+import { resolveDayItems, todayISO, defaultTripDate } from "./lib/time";
 import { getDayStatus } from "./lib/schedule";
 import { cityForDay } from "./lib/weather";
 import { baseLocation } from "./lib/links";
@@ -46,7 +46,7 @@ export default function App() {
 
   useEffect(() => {
     if (trip && selectedDate === null) {
-      setSelectedDate(nearestTripDate(tripDates, todayISO(new Date(), trip.timezone)));
+      setSelectedDate(defaultTripDate(tripDates, todayISO(new Date(), trip.timezone)));
     }
   }, [trip, tripDates, selectedDate]);
 
@@ -86,14 +86,21 @@ export default function App() {
         <button
           type="button"
           className="overview-toggle"
-          onClick={() => setView((v) => (v === "day" ? "overview" : "day"))}
+          onClick={() => {
+            if (view === "day") {
+              setView("overview");
+            } else {
+              setSelectedDate(defaultTripDate(tripDates, todayDate));
+              setView("day");
+            }
+          }}
         >
           {view === "day" ? "Trip overview" : "Back to day"}
         </button>
       </header>
 
       {view === "overview" ? (
-        <TripOverview legs={tripLegs} totalDays={tripDates.length} />
+        <TripOverview legs={tripLegs} totalDays={tripDates.length} fallbackLabel={trip.region} />
       ) : (
         <>
           <DayNav

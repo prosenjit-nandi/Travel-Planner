@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
 import type { TripLeg } from "../lib/tripOverview";
-import { joinNatural } from "../lib/tripOverview";
 import { formatDayShort } from "../lib/time";
-import { forecastFor, weatherLabel, type DayForecast } from "../lib/weather";
-import { LegThumbnail } from "./LegThumbnail";
+import { DayEntry } from "./DayEntry";
+import { Thumbnail } from "./Thumbnail";
+
+interface Props {
+  leg: TripLeg;
+  /** Shown as the chapter heading when no day in this leg has a known city. */
+  fallbackLabel?: string;
+}
 
 function rangeLabel(leg: TripLeg): string {
   if (leg.startDate === leg.endDate) return formatDayShort(leg.startDate);
@@ -18,44 +22,25 @@ function nightsLabel(leg: TripLeg): string | null {
   return `${nights} night${nights === 1 ? "" : "s"}`;
 }
 
-export function LegSummary({ leg }: { leg: TripLeg }) {
-  const [forecast, setForecast] = useState<DayForecast | null>(null);
-
-  useEffect(() => {
-    if (!leg.city) return;
-    let cancelled = false;
-    setForecast(null);
-    forecastFor(leg.city, leg.startDate).then((result) => {
-      if (!cancelled) setForecast(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [leg.city, leg.startDate]);
-
+export function LegSummary({ leg, fallbackLabel }: Props) {
   const nights = nightsLabel(leg);
-  const weatherClause = forecast
-    ? `${weatherLabel(forecast.code)}, ${Math.round(forecast.minC)}–${Math.round(forecast.maxC)}°C. `
-    : "";
-  const placesClause =
-    leg.places.length > 0 ? `Visiting ${joinNatural(leg.places)}.` : "No specific stops recorded yet.";
+  const heading = leg.city ?? fallbackLabel ?? "This trip";
 
   return (
     <li>
-      <article className="trip-overview-leg">
-        {leg.city && <LegThumbnail query={leg.city} />}
+      <section className="trip-overview-leg">
+        {leg.city && <Thumbnail query={leg.city} className="trip-overview-thumbnail" />}
         <div className="trip-overview-body">
-          <h3 className="trip-overview-city">{leg.city ?? "Location TBD"}</h3>
+          <h3 className="trip-overview-city">{heading}</h3>
           <p className="trip-overview-dates">
             {rangeLabel(leg)}
             {nights && <> · {nights}</>}
           </p>
-          <p className="trip-overview-narrative">
-            {weatherClause}
-            {placesClause}
-          </p>
+          {leg.days.map((day) => (
+            <DayEntry key={day.date} day={day} />
+          ))}
         </div>
-      </article>
+      </section>
     </li>
   );
 }

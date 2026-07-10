@@ -6,6 +6,8 @@ import { LegSummary } from "./LegSummary";
 interface Props {
   legs: TripLeg[];
   totalDays: number;
+  /** Trip-level region, shown as a chapter heading when a leg has no known city. */
+  fallbackLabel?: string;
 }
 
 function introLine(legs: TripLeg[], totalDays: number): string | null {
@@ -19,7 +21,7 @@ function introLine(legs: TripLeg[], totalDays: number): string | null {
   return `${dayPart}${cityPart}${datePart}.`;
 }
 
-export function TripOverview({ legs, totalDays }: Props) {
+export function TripOverview({ legs, totalDays, fallbackLabel }: Props) {
   const intro = introLine(legs, totalDays);
 
   return (
@@ -27,7 +29,7 @@ export function TripOverview({ legs, totalDays }: Props) {
       {intro && <p className="trip-overview-intro">{intro}</p>}
       <ul className="trip-overview">
         {legs.map((leg) => (
-          <LegSummary key={leg.startDate} leg={leg} />
+          <LegSummary key={leg.startDate} leg={leg} fallbackLabel={fallbackLabel} />
         ))}
       </ul>
     </>

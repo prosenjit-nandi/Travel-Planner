@@ -11,7 +11,7 @@ vi.mock("./data/activeTrip", () => ({
 // Prevents ItineraryCard's/TripOverview's travel estimate, thumbnail, and
 // weather lookups from firing real network calls during these integration
 // tests; each is covered on its own (TravelEstimate.test.tsx,
-// ItemThumbnail.test.tsx, LegThumbnail is exercised via TripOverview.test.tsx,
+// ItemThumbnail.test.tsx, Thumbnail.test.tsx, DayEntry.test.tsx,
 // DayWeather.test.tsx). cityForDay is kept real since App.tsx relies on it
 // directly for the day view's own weather chip.
 vi.mock("./lib/travelEstimate", () => ({
@@ -245,7 +245,9 @@ describe("App", () => {
     expect(screen.getByText("3 days across London and Edinburgh from Jul 24 to Jul 26.")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "London" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Edinburgh" })).toBeInTheDocument();
-    expect(screen.getByText("Visiting Heathrow Airport and Tower Bridge.")).toBeInTheDocument();
+    // Each day within a city gets its own sentence, not one merged per city.
+    expect(screen.getByText("Visiting Heathrow Airport.")).toBeInTheDocument();
+    expect(screen.getByText("Visiting Tower Bridge.")).toBeInTheDocument();
     expect(screen.getByText("Visiting Edinburgh Castle.")).toBeInTheDocument();
 
     // No navigation from the overview itself — only the header toggle can leave it.
@@ -274,5 +276,78 @@ describe("App", () => {
     });
     expect(screen.getByText("Trip overview")).toBeInTheDocument();
     expect(screen.getByLabelText("Previous day")).toBeInTheDocument();
+  });
+
+  it("defaults to the first day, not the last, when today is after the trip has ended", async () => {
+    const t = trip({
+      title: "Past Trip",
+      items: [
+        item({ id: "d1", date: "2026-07-01", activity: "Day One Thing" }),
+        item({ id: "d2", date: "2026-07-02", activity: "Day Two Thing" }),
+      ],
+    });
+    loadMock().mockResolvedValue(t);
+
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // System time is 2026-07-25, well after the trip's last day (07-02).
+    expect(cardFor("Day One Thing")).toBeInTheDocument();
+    expect(screen.queryByText("Day Two Thing")).not.toBeInTheDocument();
+  });
+
+  it("defaults to the first day when today is before the trip starts", async () => {
+    const t = trip({
+      title: "Future Trip",
+      items: [
+        item({ id: "d1", date: "2026-08-01", activity: "First Day Thing" }),
+        item({ id: "d2", date: "2026-08-02", activity: "Second Day Thing" }),
+      ],
+    });
+    loadMock().mockResolvedValue(t);
+
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(cardFor("First Day Thing")).toBeInTheDocument();
+    expect(screen.queryByText("Second Day Thing")).not.toBeInTheDocument();
+  });
+
+  it("resets to the default date via Back to day, even after manually browsing away", async () => {
+    const t = trip({
+      title: "Multi-day Trip",
+      items: [
+        item({ id: "d1", date: "2026-07-24", activity: "Day One Thing" }),
+        item({ id: "d2", date: "2026-07-25", activity: "Day Two Thing" }),
+        item({ id: "d3", date: "2026-07-26", activity: "Day Three Thing" }),
+      ],
+    });
+    loadMock().mockResolvedValue(t);
+
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    // Today (2026-07-25) is in range, so Day Two is shown initially.
+    expect(cardFor("Day Two Thing")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByLabelText("Next day").click();
+    });
+    expect(cardFor("Day Three Thing")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByText("Trip overview").click();
+    });
+    await act(async () => {
+      screen.getByText("Back to day").click();
+    });
+
+    // Back to day re-applies the default rather than resuming Day Three.
+    expect(cardFor("Day Two Thing")).toBeInTheDocument();
   });
 });

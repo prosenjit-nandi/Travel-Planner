@@ -1,6 +1,6 @@
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LegThumbnail } from "./LegThumbnail";
+import { Thumbnail } from "./Thumbnail";
 
 vi.mock("../lib/photo", () => ({
   photoForQuery: vi.fn(),
@@ -12,27 +12,29 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("LegThumbnail", () => {
+describe("Thumbnail", () => {
   it("renders nothing when there's no photo", async () => {
     vi.mocked(photoForQuery).mockResolvedValue(null);
-    const { container } = render(<LegThumbnail query="Nowhere" />);
+    const { container } = render(<Thumbnail query="Nowhere" className="x" />);
     await act(async () => {
       await Promise.resolve();
     });
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders the photo once resolved", async () => {
+  it("renders the photo with the given class once resolved", async () => {
     vi.mocked(photoForQuery).mockResolvedValue("https://upload.wikimedia.org/london.jpg");
-    const { container } = render(<LegThumbnail query="London" />);
+    const { container } = render(<Thumbnail query="London" className="hero" />);
     await waitFor(() => expect(container.querySelector("img")).toBeInTheDocument());
-    expect(container.querySelector("img")).toHaveAttribute("src", "https://upload.wikimedia.org/london.jpg");
-    expect(container.querySelector("img")).toHaveAttribute("alt", "");
+    const img = container.querySelector("img")!;
+    expect(img).toHaveAttribute("src", "https://upload.wikimedia.org/london.jpg");
+    expect(img).toHaveAttribute("alt", "");
+    expect(img).toHaveClass("hero");
   });
 
   it("hides itself if the image fails to load", async () => {
     vi.mocked(photoForQuery).mockResolvedValue("https://upload.wikimedia.org/broken.jpg");
-    const { container } = render(<LegThumbnail query="London" />);
+    const { container } = render(<Thumbnail query="London" className="x" />);
     const img = await waitFor(() => {
       const el = container.querySelector("img");
       expect(el).toBeInTheDocument();
@@ -45,10 +47,10 @@ describe("LegThumbnail", () => {
 
   it("re-fetches when the query changes", async () => {
     vi.mocked(photoForQuery).mockResolvedValue("https://upload.wikimedia.org/a.jpg");
-    const { rerender } = render(<LegThumbnail query="London" />);
+    const { rerender } = render(<Thumbnail query="London" className="x" />);
     await waitFor(() => expect(photoForQuery).toHaveBeenCalledWith("London"));
 
-    rerender(<LegThumbnail query="Edinburgh" />);
+    rerender(<Thumbnail query="Edinburgh" className="x" />);
     await waitFor(() => expect(photoForQuery).toHaveBeenCalledWith("Edinburgh"));
   });
 
@@ -60,7 +62,7 @@ describe("LegThumbnail", () => {
         resolvePhoto = resolve;
       }),
     );
-    const { unmount } = render(<LegThumbnail query="London" />);
+    const { unmount } = render(<Thumbnail query="London" className="x" />);
     unmount();
 
     await act(async () => {

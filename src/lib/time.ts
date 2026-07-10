@@ -153,13 +153,16 @@ export function formatDayShort(dateStr: string): string {
   return localMidnight(dateStr).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-/** Clamps `today` into the trip's date range: returns today if it falls
- * within the trip, otherwise the closest trip day (first or last). */
-export function nearestTripDate(sortedDates: string[], today: string): string {
+/**
+ * The date the day view should open on: today itself when today has
+ * itinerary items scheduled, otherwise the trip's very first day —
+ * never the last, even if today is after the trip has ended. Used both
+ * for the initial load and whenever navigation resets back to the day
+ * view (e.g. the trip overview's "Back to day" toggle).
+ */
+export function defaultTripDate(sortedDates: string[], today: string): string {
   if (sortedDates.length === 0) return today;
-  if (today <= sortedDates[0]) return sortedDates[0];
-  if (today >= sortedDates[sortedDates.length - 1]) return sortedDates[sortedDates.length - 1];
-  return today;
+  return sortedDates.includes(today) ? today : sortedDates[0];
 }
 
 export function formatMinutes(totalMinutes: number): string {

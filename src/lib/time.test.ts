@@ -6,7 +6,7 @@ import {
   formatDayShort,
   formatMinutes,
   formatTime,
-  nearestTripDate,
+  defaultTripDate,
   resolveDayItems,
   todayISO,
   zonedWallTimeToUtc,
@@ -138,21 +138,26 @@ describe("formatDayShort", () => {
   });
 });
 
-describe("nearestTripDate", () => {
+describe("defaultTripDate", () => {
   it("returns today when there are no trip dates", () => {
-    expect(nearestTripDate([], "2026-07-25")).toBe("2026-07-25");
+    expect(defaultTripDate([], "2026-07-25")).toBe("2026-07-25");
   });
 
-  it("clamps to the first date when today is before the trip", () => {
-    expect(nearestTripDate(["2026-07-24", "2026-07-25"], "2026-01-01")).toBe("2026-07-24");
+  it("returns today when today has itinerary items scheduled", () => {
+    expect(defaultTripDate(["2026-07-24", "2026-07-25", "2026-07-26"], "2026-07-25")).toBe("2026-07-25");
   });
 
-  it("clamps to the last date when today is after the trip", () => {
-    expect(nearestTripDate(["2026-07-24", "2026-07-25"], "2026-12-31")).toBe("2026-07-25");
+  it("falls back to the first day when today is before the trip", () => {
+    expect(defaultTripDate(["2026-07-24", "2026-07-25"], "2026-01-01")).toBe("2026-07-24");
   });
 
-  it("returns today when it falls within the trip range", () => {
-    expect(nearestTripDate(["2026-07-24", "2026-07-26"], "2026-07-25")).toBe("2026-07-25");
+  it("falls back to the first day, not the last, when today is after the trip", () => {
+    expect(defaultTripDate(["2026-07-24", "2026-07-25"], "2026-12-31")).toBe("2026-07-24");
+  });
+
+  it("falls back to the first day for a gap day within the range that has no items", () => {
+    // 2026-07-25 is between the two trip dates but isn't itself one of them.
+    expect(defaultTripDate(["2026-07-24", "2026-07-26"], "2026-07-25")).toBe("2026-07-24");
   });
 });
 

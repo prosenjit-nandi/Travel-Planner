@@ -136,11 +136,25 @@ describe("cityForDay", () => {
     };
   }
 
-  it("returns the first item's city", () => {
+  it("returns the only named city", () => {
     expect(cityForDay([item({}), item({ city: "London" })])).toBe("London");
   });
 
   it("returns undefined when no item names a city", () => {
     expect(cityForDay([item({}), item({})])).toBeUndefined();
+  });
+
+  it("returns whichever city most items agree on, not just the first one mentioned", () => {
+    const items = [
+      item({ city: "London" }),
+      item({ city: "Windsor" }),
+      item({ city: "Windsor" }),
+    ];
+    expect(cityForDay(items)).toBe("Windsor");
+  });
+
+  it("breaks a tie by keeping the first city that reached the winning count", () => {
+    const items = [item({ city: "London" }), item({ city: "Windsor" })];
+    expect(cityForDay(items)).toBe("London");
   });
 });
