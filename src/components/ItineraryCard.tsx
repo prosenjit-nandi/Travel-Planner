@@ -41,7 +41,9 @@ export function ItineraryCard({ item, timeState, region, timeZone, showDeviceTim
   const uber = uberUrl(item, region);
   const catClass = CATEGORY_CLASS[item.category] ?? "cat-other";
   const hasDetail = Boolean(item.notes || item.address || item.confirmationNumber);
-  const subLocations = extractSubLocations(item.notes);
+  const isExcursion = item.category.trim().toLowerCase() === "excursion";
+  const subLocations = isExcursion ? extractSubLocations(item.notes) : [];
+
 
   // Only ever wired up to a button that's rendered exclusively inside the
   // `item.confirmationNumber &&` block below, so the value is always set here.
