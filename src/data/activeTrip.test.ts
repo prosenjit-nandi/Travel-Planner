@@ -32,7 +32,7 @@ describe("activeDataSource", () => {
     const trip = await activeDataSource.load();
 
     expect(trip.id).toBe("uk-2026");
-    expect(trip.title).toBe("UK & Scotland Trip 2026");
+    expect(trip.title).toBe("London & Edinburgh Trip 2026");
     expect(trip.timezone).toBe("Europe/London");
     expect(trip.items).toHaveLength(1);
     expect(trip.items[0].activity).toBe("Mock Live Item");

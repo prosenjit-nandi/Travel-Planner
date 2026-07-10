@@ -5,7 +5,7 @@ import uk2026 from "./trips/uk-2026.json";
 
 const liveSource = googleSheetTripSource({
   id: "uk-2026",
-  title: "UK & Scotland Trip 2026",
+  title: "London & Edinburgh Trip 2026",
   timezone: "Europe/London",
   region: "United Kingdom",
   endpoint: "/api/itinerary",
