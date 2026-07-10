@@ -22,23 +22,53 @@ function writeCache(cache: Record<string, string | null>): void {
 
 interface WikipediaSearchResponse {
   query?: {
-    pages?: Record<string, { thumbnail?: { source: string } }>;
+    pages?: Record<
+      string,
+      {
+        title?: string;
+        description?: string;
+        index?: number;
+        thumbnail?: { source: string };
+      }
+    >;
   };
+}
+
+/** Determines if a Wikipedia page represents a person rather than a location/landmark. */
+function isPersonPage(title: string, description?: string): boolean {
+  const desc = (description || "").toLowerCase();
+  const t = title.toLowerCase();
+
+  // Exceptions: if it is explicitly a monument, statue, memorial, park, etc.
+  const landmarkKeywords = ["monument", "statue", "memorial", "sculpture", "grave", "tomb", "building", "park", "square", "bridge"];
+  if (landmarkKeywords.some((k) => desc.includes(k) || t.includes(k))) {
+    return false;
+  }
+
+  // Keywords indicating a person's profession or bio
+  const personKeywords = [
+    "politician", "statesman", "poet", "writer", "prime minister", "monarch",
+    "king", "queen", "president", "actor", "artist", "composer", "novelist",
+    "soldier", "officer", "general", "historian", "philosopher", "scientist",
+    "activist", "person", "biography", "statesperson", "leader", "member",
+    "minister", "founder"
+  ];
+  if (personKeywords.some((k) => desc.includes(k))) {
+    return true;
+  }
+
+  // Date of birth/death patterns often found in Wikidata descriptions for people
+  if (/\b(born|died|\d{4}–\d{4})\b/i.test(desc)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
  * Finds a small representative photo for a place name via Wikipedia's
- * public search API (free, no key, CORS-enabled) — good for named
- * landmarks, museums, stations, and cities, not for restaurants, hotels, or
- * street addresses that don't have an encyclopedia entry, so a miss (null)
- * is the expected outcome for most day-to-day items. Results (including
- * misses) are cached indefinitely since a place's photo doesn't change.
- *
- * Deliberately takes a bare place name rather than the city/region-anchored
- * `locationQuery` used for Maps/Uber: MediaWiki's full-text search ranks
- * "British Museum, London, United Kingdom" against the "London" page
- * instead of "British Museum" — the extra disambiguating context that helps
- * geocoding actively hurts here.
+ * public search API (free, no key, CORS-enabled). Filters out personal portraits
+ * to guarantee that only location images are returned.
  */
 export async function photoForQuery(query: string): Promise<string | null> {
   const key = query.trim().toLowerCase();
@@ -49,8 +79,8 @@ export async function photoForQuery(query: string): Promise<string | null> {
 
   try {
     const url =
-      "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrnamespace=0&gsrlimit=1" +
-      `&gsrsearch=${encodeURIComponent(query)}&prop=pageimages&piprop=thumbnail&pithumbsize=120&format=json&origin=*`;
+      "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrnamespace=0&gsrlimit=5" +
+      `&gsrsearch=${encodeURIComponent(query)}&prop=pageimages|description&piprop=thumbnail&pithumbsize=120&format=json&origin=*`;
     const res = await fetch(url);
     if (!res.ok) {
       cache[key] = null;
@@ -59,8 +89,27 @@ export async function photoForQuery(query: string): Promise<string | null> {
     }
     const data = (await res.json()) as WikipediaSearchResponse;
     const pages = data.query?.pages;
-    const first = pages ? Object.values(pages)[0] : undefined;
-    const photoUrl = first?.thumbnail?.source ?? null;
+    if (!pages) {
+      cache[key] = null;
+      writeCache(cache);
+      return null;
+    }
+
+    const sortedPages = Object.values(pages).sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+    
+    let photoUrl: string | null = null;
+    for (const page of sortedPages) {
+      const title = page.title || "";
+      const desc = page.description || "";
+      const thumb = page.thumbnail?.source;
+
+      if (thumb) {
+        if (!isPersonPage(title, desc)) {
+          photoUrl = thumb;
+          break;
+        }
+      }
+    }
 
     cache[key] = photoUrl;
     writeCache(cache);
@@ -75,3 +124,4 @@ export function photoFor(item: ItineraryItem): Promise<string | null> {
   const query = baseLocation(item);
   return query ? photoForQuery(query) : Promise.resolve(null);
 }
+
