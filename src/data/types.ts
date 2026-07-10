@@ -27,6 +27,8 @@ export interface ItineraryItem {
   city?: string;
   category: Category;
   notes?: string;
+  /** Booking/confirmation reference, e.g. a flight PNR or hotel reservation number. */
+  confirmationNumber?: string;
 }
 
 export interface Trip {

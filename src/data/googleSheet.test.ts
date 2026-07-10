@@ -96,6 +96,25 @@ describe("googleSheetTripSource", () => {
     expect(trip.items[0]).not.toHaveProperty("city");
   });
 
+  it("parses an optional Confirmation column into item.confirmationNumber", async () => {
+    mockFetch({
+      values: [
+        [...HEADER, "Confirmation"],
+        ["7/25/2026", "8:30:00 AM", "10:00:00 AM", "Flight", "Heathrow", "Transport", "", "XYZ789"],
+      ],
+    });
+    const trip = await makeSource().load();
+    expect(trip.items[0].confirmationNumber).toBe("XYZ789");
+  });
+
+  it("omits confirmationNumber when the Confirmation column is absent or blank", async () => {
+    mockFetch({
+      values: [HEADER, ["7/25/2026", "8:30:00 AM", "10:00:00 AM", "Flight", "Heathrow", "Transport", ""]],
+    });
+    const trip = await makeSource().load();
+    expect(trip.items[0]).not.toHaveProperty("confirmationNumber");
+  });
+
   it("passes the configured region through to the loaded trip", async () => {
     mockFetch({ values: [HEADER] });
     const source = googleSheetTripSource({

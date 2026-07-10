@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { DayStatus } from "../lib/schedule";
 import type { ResolvedItem } from "../lib/time";
+import { formatTime } from "../lib/time";
 import { StatusBanner } from "./StatusBanner";
 
 function resolvedItem(overrides: Partial<ResolvedItem> = {}): ResolvedItem {
@@ -21,13 +22,13 @@ function resolvedItem(overrides: Partial<ResolvedItem> = {}): ResolvedItem {
 
 describe("StatusBanner", () => {
   it("renders the no-items state", () => {
-    render(<StatusBanner status={{ kind: "no-items" }} />);
+    render(<StatusBanner status={{ kind: "no-items" }} timeZone="UTC" />);
     expect(screen.getByText(/No itinerary items/)).toBeInTheDocument();
   });
 
   it("renders the before-day state", () => {
     const status: DayStatus = { kind: "before-day", next: resolvedItem({ activity: "Flight" }) };
-    render(<StatusBanner status={status} />);
+    render(<StatusBanner status={status} timeZone="UTC" />);
     expect(screen.getByText("Flight")).toBeInTheDocument();
   });
 
@@ -38,7 +39,7 @@ describe("StatusBanner", () => {
       next: resolvedItem({ activity: "Museum" }),
       minutesUntilNext: 90,
     };
-    render(<StatusBanner status={status} />);
+    render(<StatusBanner status={status} timeZone="UTC" />);
     expect(screen.getByText("On schedule")).toBeInTheDocument();
     expect(screen.getByText("Lunch")).toBeInTheDocument();
   });
@@ -50,7 +51,7 @@ describe("StatusBanner", () => {
       previous: resolvedItem({ activity: "Walk" }),
       minutesUntilNext: 45,
     };
-    render(<StatusBanner status={status} />);
+    render(<StatusBanner status={status} timeZone="UTC" />);
     expect(screen.getByText("Free time")).toBeInTheDocument();
     expect(screen.getByText("Dinner")).toBeInTheDocument();
   });
@@ -62,7 +63,7 @@ describe("StatusBanner", () => {
       current: resolvedItem({ activity: "Coffee" }),
       minutesUntilNext: 0,
     };
-    render(<StatusBanner status={status} />);
+    render(<StatusBanner status={status} timeZone="UTC" />);
     expect(screen.getByText("Leave now")).toBeInTheDocument();
     expect(screen.getByText(/Waterloo Station/)).toBeInTheDocument();
   });
@@ -74,13 +75,27 @@ describe("StatusBanner", () => {
       current: undefined,
       minutesUntilNext: 5,
     };
-    render(<StatusBanner status={status} />);
+    render(<StatusBanner status={status} timeZone="UTC" />);
     expect(screen.getByText("Leave in 5m")).toBeInTheDocument();
   });
 
   it("renders the day-done state", () => {
     const status: DayStatus = { kind: "day-done", last: resolvedItem({ endTime: "22:00" }) };
-    render(<StatusBanner status={status} />);
+    render(<StatusBanner status={status} timeZone="UTC" />);
     expect(screen.getByText(/wrapped at/)).toBeInTheDocument();
+  });
+
+  it("shows the device-local time alongside destination time when they differ", () => {
+    const item = resolvedItem({ activity: "Flight", start: new Date("2026-07-25T09:00:00Z") });
+    const status: DayStatus = { kind: "before-day", next: item };
+    const { container } = render(<StatusBanner status={status} timeZone="UTC" showDeviceTime />);
+    const deviceLabel = formatTime(item.start);
+    expect(container.textContent).toContain(`${deviceLabel} local`);
+  });
+
+  it("omits the device-local time when showDeviceTime is false", () => {
+    const status: DayStatus = { kind: "before-day", next: resolvedItem({ activity: "Flight" }) };
+    const { container } = render(<StatusBanner status={status} timeZone="UTC" />);
+    expect(container.textContent).not.toContain("local");
   });
 });

@@ -3,11 +3,13 @@ import type { ItineraryItem } from "../data/types";
 import {
   addDaysISO,
   formatDayLabel,
+  formatDayShort,
   formatMinutes,
   formatTime,
   nearestTripDate,
   resolveDayItems,
   todayISO,
+  zonedWallTimeToUtc,
 } from "./time";
 
 function item(overrides: Partial<ItineraryItem> = {}): ItineraryItem {
@@ -23,12 +25,44 @@ function item(overrides: Partial<ItineraryItem> = {}): ItineraryItem {
   };
 }
 
+describe("zonedWallTimeToUtc", () => {
+  it("resolves a wall-clock time in UTC to the matching UTC instant", () => {
+    const date = zonedWallTimeToUtc("2026-07-25", "09:00", "UTC");
+    expect(date.toISOString()).toBe("2026-07-25T09:00:00.000Z");
+  });
+
+  it("accounts for a non-UTC offset", () => {
+    // Tokyo is UTC+9 with no DST, so 09:00 local is 00:00 UTC.
+    const date = zonedWallTimeToUtc("2026-07-25", "09:00", "Asia/Tokyo");
+    expect(date.toISOString()).toBe("2026-07-25T00:00:00.000Z");
+  });
+
+  it("accounts for DST when it's in effect", () => {
+    // London is BST (UTC+1) in July.
+    const date = zonedWallTimeToUtc("2026-07-25", "09:00", "Europe/London");
+    expect(date.toISOString()).toBe("2026-07-25T08:00:00.000Z");
+  });
+
+  it("accounts for standard time when DST isn't in effect", () => {
+    // London is GMT (UTC+0) in January.
+    const date = zonedWallTimeToUtc("2026-01-25", "09:00", "Europe/London");
+    expect(date.toISOString()).toBe("2026-01-25T09:00:00.000Z");
+  });
+});
+
 describe("resolveDayItems", () => {
-  it("resolves normal same-day ordering", () => {
+  it("resolves normal same-day ordering, anchored to the given time zone", () => {
     const items = [item({ id: "a", startTime: "09:00", endTime: "10:00" })];
-    const [resolved] = resolveDayItems("2026-07-25", items);
-    expect(resolved.start.getHours()).toBe(9);
-    expect(resolved.end.getHours()).toBe(10);
+    const [resolved] = resolveDayItems("2026-07-25", items, "UTC");
+    expect(resolved.start.toISOString()).toBe("2026-07-25T09:00:00.000Z");
+    expect(resolved.end.toISOString()).toBe("2026-07-25T10:00:00.000Z");
+  });
+
+  it("anchors to the trip's time zone rather than the device's", () => {
+    const items = [item({ id: "a", startTime: "09:00", endTime: "10:00" })];
+    const [resolved] = resolveDayItems("2026-07-25", items, "Europe/London");
+    // 09:00 BST (UTC+1) in July.
+    expect(resolved.start.toISOString()).toBe("2026-07-25T08:00:00.000Z");
   });
 
   it("carries subsequent items past midnight when they start earlier than the previous item ended", () => {
@@ -36,24 +70,22 @@ describe("resolveDayItems", () => {
       item({ id: "a", startTime: "22:00", endTime: "23:30" }),
       item({ id: "b", startTime: "00:30", endTime: "01:00" }),
     ];
-    const [first, second] = resolveDayItems("2026-07-25", items);
-    expect(first.end.getDate()).toBe(25);
-    expect(second.start.getDate()).toBe(26);
-    expect(second.start.getHours()).toBe(0);
+    const [first, second] = resolveDayItems("2026-07-25", items, "UTC");
+    expect(first.end.toISOString()).toBe("2026-07-25T23:30:00.000Z");
+    expect(second.start.toISOString()).toBe("2026-07-26T00:30:00.000Z");
     expect(second.start.getTime()).toBeGreaterThan(first.end.getTime());
   });
 
   it("rolls an item's own end past midnight when end is earlier than its start", () => {
     const items = [item({ id: "a", startTime: "18:10", endTime: "06:25" })];
-    const [resolved] = resolveDayItems("2026-07-25", items);
-    expect(resolved.start.getDate()).toBe(25);
-    expect(resolved.end.getDate()).toBe(26);
-    expect(resolved.end.getHours()).toBe(6);
+    const [resolved] = resolveDayItems("2026-07-25", items, "UTC");
+    expect(resolved.start.toISOString()).toBe("2026-07-25T18:10:00.000Z");
+    expect(resolved.end.toISOString()).toBe("2026-07-26T06:25:00.000Z");
   });
 });
 
 describe("todayISO", () => {
-  it("formats an explicit date", () => {
+  it("formats an explicit date using the device's own zone by default", () => {
     expect(todayISO(new Date(2026, 6, 5))).toBe("2026-07-05");
   });
 
@@ -62,6 +94,13 @@ describe("todayISO", () => {
     vi.setSystemTime(new Date(2026, 0, 9));
     expect(todayISO()).toBe("2026-01-09");
     vi.useRealTimers();
+  });
+
+  it("formats a date as it reads in an explicit time zone", () => {
+    // Just before midnight UTC is already the next day in Tokyo (UTC+9).
+    const date = new Date("2026-07-24T23:30:00Z");
+    expect(todayISO(date, "Asia/Tokyo")).toBe("2026-07-25");
+    expect(todayISO(date, "UTC")).toBe("2026-07-24");
   });
 });
 
@@ -72,7 +111,12 @@ describe("addDaysISO", () => {
 });
 
 describe("formatTime", () => {
-  it("formats a Date as a locale time string", () => {
+  it("formats a Date in an explicit time zone", () => {
+    const formatted = formatTime(new Date("2026-07-25T13:05:00Z"), "UTC");
+    expect(formatted.toLowerCase()).toContain("1:05");
+  });
+
+  it("falls back to the device's own zone when none is given", () => {
     const formatted = formatTime(new Date(2026, 6, 25, 13, 5));
     expect(formatted.toLowerCase()).toContain("1:05");
   });
@@ -82,6 +126,14 @@ describe("formatDayLabel", () => {
   it("formats a weekday, month, and day", () => {
     const label = formatDayLabel("2026-07-25");
     expect(label).toContain("July");
+    expect(label).toContain("25");
+  });
+});
+
+describe("formatDayShort", () => {
+  it("formats a compact month and day", () => {
+    const label = formatDayShort("2026-07-25");
+    expect(label).toContain("Jul");
     expect(label).toContain("25");
   });
 });

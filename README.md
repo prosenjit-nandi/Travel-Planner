@@ -5,10 +5,18 @@ A personal trip-itinerary companion, installable on iPhone as a home-screen app 
 ## Features
 
 - **Day-by-day schedule** — swipe/tap through each day of the trip to see what's planned and when.
-- **Live status** — on the current day, a banner shows whether you're on track, in free time before the next item, or should leave now to make the next commitment.
+- **Live status** — on the current day, a banner shows whether you're on track, in free time before the next item, or should leave now to make the next commitment. Anchored to the trip's own time zone (see below), so it stays correct even before you've landed.
 - **Maps** — every item with a location opens directly in Google Maps for transit planning.
 - **Uber** — every item with a location can also launch the Uber app with the dropoff pre-filled.
+- **Walk/drive estimate** — each card shows a rough travel time to the next item ("~12m walk to next"), from geocoded straight-line distance — a quick gauge of whether it's a walk or a ride, not turn-by-turn routing.
+- **Weather** — a per-day forecast chip for the day's city, when both the city and the date (within ~15 days out) are known.
+- **Destination-local time** — item and status times are always shown in the trip's own time zone; when your device is on a different zone (e.g. checking the plan before departure), the device-local equivalent is shown alongside it.
+- **Jump to today** — a "Today" button appears in the day nav whenever you've browsed away from the current day.
+- **Trip overview** — a condensed view grouping consecutive same-city days into legs (e.g. "London, Jul 24–26"), so a multi-city trip's shape is visible at a glance; tap a leg to jump to its first day.
+- **Tap-to-expand detail** — notes, a precise address, and a booking confirmation number (with a copy button) stay tucked under the card until tapped, so the compact view doesn't get crowded.
 - **Installable** — add it to your iPhone home screen and it runs full-screen, offline-capable, no App Store needed.
+
+Weather and travel estimates call two free, no-API-key services directly from the client: [Open-Meteo](https://open-meteo.com) for forecasts, and [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org) to geocode place names. Geocoding results are cached indefinitely in `localStorage` (a venue's coordinates never change) and requests are serialized rather than fired in parallel, out of courtesy to Nominatim's shared public instance.
 
 ## Live site
 
@@ -47,7 +55,7 @@ Itinerary data lives behind the `ItineraryDataSource` interface (`src/data/types
 - **Static JSON:** add a new file under `src/data/trips/` matching the `Trip` shape, then point `src/data/activeTrip.ts` at it via `staticTripSource(...)`.
 - **Live Google Sheet (current setup):** `src/data/activeTrip.ts` polls a private Google Sheet every 10 minutes (see below).
 
-Each itinerary item needs a date, start/end time, activity, and either a `locationName` or a precise `address` (used for the Maps/Uber links).
+Each itinerary item needs a date, start/end time, activity, and either a `locationName` or a precise `address` (used for the Maps/Uber links). `city` (for weather and Maps/Uber disambiguation) and `confirmationNumber` (shown with a copy button in the card's expanded detail) are optional.
 
 ### Getting the right destination in Maps/Uber
 
@@ -60,7 +68,7 @@ A bare venue name like "Waterloo Station" or "The Ivy" isn't unique — Maps/Ube
 
 The itinerary is fetched from a Google Sheet the trip owner edits directly. The sheet is **never shared publicly** — a Cloudflare Pages Function (`functions/api/itinerary.ts`) holds a Google service-account credential, authenticates to the Sheets API server-side, and serves the data as JSON to the client, gated by a shared-secret token.
 
-Column headers the sheet must have: `Date`, `Start Time`, `End Time`, `Activity`, `Location`, `Category`, `Notes`. An optional `City` column feeds `item.city` (see above); any other columns, e.g. cost tracking, are ignored.
+Column headers the sheet must have: `Date`, `Start Time`, `End Time`, `Activity`, `Location`, `Category`, `Notes`. Two optional columns are also recognized: `City` feeds `item.city` (see above, and used for the weather chip), and `Confirmation` feeds `item.confirmationNumber`. Any other columns, e.g. cost tracking, are ignored.
 
 ### One-time Google Cloud setup
 

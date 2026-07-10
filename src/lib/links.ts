@@ -13,7 +13,7 @@ function includesLoose(haystack: string, needle: string): boolean {
  * context, so those are appended when known and not already implied by the
  * name itself (avoids "Edinburgh Castle, Edinburgh, Edinburgh"-style repeats).
  */
-function mapQuery(item: ItineraryItem, region?: string): string | null {
+export function locationQuery(item: ItineraryItem, region?: string): string | null {
   const address = item.address?.trim();
   if (address) return address;
 
@@ -33,7 +33,7 @@ function mapQuery(item: ItineraryItem, region?: string): string | null {
 
 /** Universal link: opens the Google Maps app on iOS if installed, else the website. */
 export function googleMapsUrl(item: ItineraryItem, region?: string): string | null {
-  const query = mapQuery(item, region);
+  const query = locationQuery(item, region);
   if (!query) return null;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
@@ -44,7 +44,7 @@ export function googleMapsUrl(item: ItineraryItem, region?: string): string | nu
  * app store / uber.com.
  */
 export function uberUrl(item: ItineraryItem, region?: string): string | null {
-  const query = mapQuery(item, region);
+  const query = locationQuery(item, region);
   if (!query) return null;
   const params = new URLSearchParams({
     action: "setPickup",

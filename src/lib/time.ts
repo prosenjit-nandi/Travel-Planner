@@ -10,22 +10,71 @@ function toMinutes(hhmm: string): number {
   return h * 60 + m;
 }
 
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
 function localMidnight(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
 /**
+ * Minutes the given IANA time zone is ahead of UTC at this instant (handles
+ * DST automatically, since Intl resolves the offset for this specific date).
+ */
+function tzOffsetMinutes(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date);
+
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  const asUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+  );
+  return (asUtc - date.getTime()) / 60_000;
+}
+
+/**
+ * Resolves a wall-clock date + time as it reads in `timeZone` to the actual
+ * UTC instant it represents — e.g. "09:00" in "Europe/London" is a different
+ * absolute moment than "09:00" read in whatever zone the device happens to
+ * be in. This is what lets the live-status logic stay correct even when
+ * checking the itinerary before departure, while the device is still on the
+ * origin time zone.
+ */
+export function zonedWallTimeToUtc(dateStr: string, timeStr: string, timeZone: string): Date {
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const [h, mi] = timeStr.split(":").map(Number);
+  const utcGuess = Date.UTC(y, mo - 1, d, h, mi);
+  const offsetMinutes = tzOffsetMinutes(new Date(utcGuess), timeZone);
+  return new Date(utcGuess - offsetMinutes * 60_000);
+}
+
+/**
  * Resolves each item's start/end to absolute Date objects, honoring
  * chronological order within the day even when an activity's clock time
  * rolls past midnight (e.g. a hotel check-in logged at 00:00 right after
- * a late-night flight on the same trip-day).
+ * a late-night flight on the same trip-day). Times are anchored to the
+ * trip's own time zone, not the device's.
  */
 export function resolveDayItems(
   dateStr: string,
   items: ItineraryItem[],
+  timeZone: string,
 ): ResolvedItem[] {
-  const base = localMidnight(dateStr);
   let carry = 0;
   let prevEndAbs = -Infinity;
   const resolved: ResolvedItem[] = [];
@@ -43,8 +92,8 @@ export function resolveDayItems(
 
     resolved.push({
       ...item,
-      start: addMinutes(base, startAbs),
-      end: addMinutes(base, endAbs),
+      start: zonedMinutesToUtc(dateStr, startAbs, timeZone),
+      end: zonedMinutesToUtc(dateStr, endAbs, timeZone),
     });
     prevEndAbs = endAbs;
   }
@@ -52,14 +101,31 @@ export function resolveDayItems(
   return resolved;
 }
 
-function addMinutes(date: Date, minutes: number): Date {
-  return new Date(date.getTime() + minutes * 60_000);
+/** `totalMinutes` may exceed a single day (e.g. carried past midnight). */
+function zonedMinutesToUtc(dateStr: string, totalMinutes: number, timeZone: string): Date {
+  const dayOffset = Math.floor(totalMinutes / (24 * 60));
+  const minuteOfDay = totalMinutes - dayOffset * 24 * 60;
+  const shiftedDate = dayOffset === 0 ? dateStr : addDaysISO(dateStr, dayOffset);
+  const timeStr = `${pad2(Math.floor(minuteOfDay / 60))}:${pad2(minuteOfDay % 60)}`;
+  return zonedWallTimeToUtc(shiftedDate, timeStr, timeZone);
 }
 
-export function todayISO(now: Date = new Date()): string {
+/**
+ * "YYYY-MM-DD" for `now` as it reads in `timeZone` (falls back to the
+ * device's own time zone when none is given).
+ */
+export function todayISO(now: Date = new Date(), timeZone?: string): string {
+  if (timeZone) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+  }
   const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
+  const m = pad2(now.getMonth() + 1);
+  const d = pad2(now.getDate());
   return `${y}-${m}-${d}`;
 }
 
@@ -69,8 +135,9 @@ export function addDaysISO(dateStr: string, days: number): string {
   return todayISO(d);
 }
 
-export function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+/** Formats a Date in `timeZone` when given, else the device's own zone. */
+export function formatTime(date: Date, timeZone?: string): string {
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", timeZone });
 }
 
 export function formatDayLabel(dateStr: string): string {
@@ -79,6 +146,11 @@ export function formatDayLabel(dateStr: string): string {
     month: "long",
     day: "numeric",
   });
+}
+
+/** Compact "Jul 25" form, for date ranges in the trip overview. */
+export function formatDayShort(dateStr: string): string {
+  return localMidnight(dateStr).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 /** Clamps `today` into the trip's date range: returns today if it falls

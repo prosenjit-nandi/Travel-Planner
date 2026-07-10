@@ -8,6 +8,13 @@ vi.mock("./data/activeTrip", () => ({
   activeDataSource: { load: vi.fn() },
 }));
 
+// Prevents ItineraryCard's next-item travel estimate from firing real
+// geocoding network calls during these integration tests; it's covered on
+// its own in TravelEstimate.test.tsx.
+vi.mock("./lib/travelEstimate", () => ({
+  estimateTimeToNext: vi.fn().mockResolvedValue(null),
+}));
+
 function item(overrides: Partial<ItineraryItem>): ItineraryItem {
   return {
     id: overrides.id ?? "item",
@@ -42,7 +49,7 @@ const loadMock = () => vi.mocked(activeDataSource.load);
 
 beforeEach(() => {
   vi.useFakeTimers();
-  vi.setSystemTime(new Date(2026, 6, 25, 9, 30, 0));
+  vi.setSystemTime(new Date("2026-07-25T09:30:00Z"));
 });
 
 afterEach(() => {
@@ -116,12 +123,42 @@ describe("App", () => {
     expect(cardFor("Prev Day Thing")).not.toHaveClass("past");
   });
 
+  it("jumps back to today via the Today button after browsing away", async () => {
+    const t = trip({
+      title: "Multi-day Trip",
+      items: [
+        item({ id: "prev-1", date: "2026-07-24", activity: "Prev Day Thing", startTime: "08:00", endTime: "09:00" }),
+        item({ id: "today-1", date: "2026-07-25", activity: "Today Thing", startTime: "09:00", endTime: "10:00" }),
+      ],
+    });
+    loadMock().mockResolvedValue(t);
+
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(screen.queryByLabelText("Jump to today")).not.toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByLabelText("Previous day").click();
+    });
+    expect(screen.getByLabelText("Jump to today")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByLabelText("Jump to today").click();
+    });
+
+    expect(screen.getByText("On schedule")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Jump to today")).not.toBeInTheDocument();
+  });
+
   it("moves an item from future to current after the 30-second clock tick", async () => {
     const t = trip({
       title: "Ticking Trip",
       items: [item({ id: "soon-1", activity: "Starting Soon", startTime: "09:30", endTime: "09:40" })],
     });
-    vi.setSystemTime(new Date(2026, 6, 25, 9, 29, 45));
+    vi.setSystemTime(new Date("2026-07-25T09:29:45Z"));
     loadMock().mockResolvedValue(t);
 
     render(<App />);
@@ -172,5 +209,61 @@ describe("App", () => {
     });
 
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("switches to the trip overview and jumps to a leg's first day on selection", async () => {
+    const t = trip({
+      title: "Multi-city Trip",
+      items: [
+        item({ id: "ldn-1", date: "2026-07-24", activity: "Arrive London", city: "London" }),
+        item({ id: "ldn-2", date: "2026-07-25", activity: "Tower Bridge", city: "London" }),
+        item({ id: "edi-1", date: "2026-07-26", activity: "Arrive Edinburgh", city: "Edinburgh" }),
+      ],
+    });
+    loadMock().mockResolvedValue(t);
+
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    await act(async () => {
+      screen.getByText("Trip overview").click();
+    });
+
+    expect(screen.getByText("London")).toBeInTheDocument();
+    expect(screen.getByText("Edinburgh")).toBeInTheDocument();
+    expect(screen.getByText("2 items")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByText("Edinburgh").closest("button")!.click();
+    });
+
+    expect(screen.getByText("Arrive Edinburgh")).toBeInTheDocument();
+    expect(screen.queryByText("Back to day")).not.toBeInTheDocument();
+  });
+
+  it("returns to day view via the header toggle without selecting a leg", async () => {
+    const t = trip({
+      title: "Multi-city Trip",
+      items: [item({ id: "ldn-1", date: "2026-07-24", activity: "Arrive London", city: "London" })],
+    });
+    loadMock().mockResolvedValue(t);
+
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    await act(async () => {
+      screen.getByText("Trip overview").click();
+    });
+    expect(screen.getByText("Back to day")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByText("Back to day").click();
+    });
+    expect(screen.getByText("Trip overview")).toBeInTheDocument();
+    expect(screen.getByLabelText("Previous day")).toBeInTheDocument();
   });
 });

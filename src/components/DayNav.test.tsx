@@ -38,4 +38,16 @@ describe("DayNav", () => {
     expect(screen.getByLabelText("Previous day")).toBeDisabled();
     expect(screen.getByLabelText("Next day")).toBeDisabled();
   });
+
+  it("omits the Today button when onJumpToday isn't given", () => {
+    render(<DayNav date={DATES[0]} dates={DATES} onChange={() => {}} />);
+    expect(screen.queryByLabelText("Jump to today")).not.toBeInTheDocument();
+  });
+
+  it("calls onJumpToday when the Today button is clicked", () => {
+    const onJumpToday = vi.fn();
+    render(<DayNav date={DATES[0]} dates={DATES} onChange={() => {}} onJumpToday={onJumpToday} />);
+    fireEvent.click(screen.getByLabelText("Jump to today"));
+    expect(onJumpToday).toHaveBeenCalled();
+  });
 });

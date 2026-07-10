@@ -35,6 +35,7 @@ function rowsToItems(rows: string[][]): ItineraryItem[] {
   const cityIdx = col("City");
   const categoryIdx = col("Category");
   const notesIdx = col("Notes");
+  const confirmationIdx = col("Confirmation");
 
   const seqByDate = new Map<string, number>();
   const items: ItineraryItem[] = [];
@@ -54,6 +55,7 @@ function rowsToItems(rows: string[][]): ItineraryItem[] {
     const category = CATEGORY_FIXES[rawCategory] ?? rawCategory;
     const notes = cells[notesIdx]?.trim();
     const city = cells[cityIdx]?.trim();
+    const confirmationNumber = cells[confirmationIdx]?.trim();
 
     const seq = (seqByDate.get(date) ?? 0) + 1;
     seqByDate.set(date, seq);
@@ -68,6 +70,7 @@ function rowsToItems(rows: string[][]): ItineraryItem[] {
       ...(city ? { city } : {}),
       category,
       ...(notes ? { notes } : {}),
+      ...(confirmationNumber ? { confirmationNumber } : {}),
     });
   }
 
