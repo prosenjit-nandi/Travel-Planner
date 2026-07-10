@@ -8,15 +8,23 @@ vi.mock("./data/activeTrip", () => ({
   activeDataSource: { load: vi.fn() },
 }));
 
-// Prevents ItineraryCard's next-item travel estimate and thumbnail from
-// firing real network calls during these integration tests; both are
-// covered on their own in TravelEstimate.test.tsx and ItemThumbnail.test.tsx.
+// Prevents ItineraryCard's/TripOverview's travel estimate, thumbnail, and
+// weather lookups from firing real network calls during these integration
+// tests; each is covered on its own (TravelEstimate.test.tsx,
+// ItemThumbnail.test.tsx, LegThumbnail is exercised via TripOverview.test.tsx,
+// DayWeather.test.tsx). cityForDay is kept real since App.tsx relies on it
+// directly for the day view's own weather chip.
 vi.mock("./lib/travelEstimate", () => ({
   estimateTimeToNext: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("./lib/photo", () => ({
   photoFor: vi.fn().mockResolvedValue(null),
+  photoForQuery: vi.fn().mockResolvedValue(null),
 }));
+vi.mock("./lib/weather", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./lib/weather")>();
+  return { ...actual, forecastFor: vi.fn().mockResolvedValue(null) };
+});
 
 function item(overrides: Partial<ItineraryItem>): ItineraryItem {
   return {
@@ -236,10 +244,10 @@ describe("App", () => {
 
     expect(screen.getByText("London")).toBeInTheDocument();
     expect(screen.getByText("Edinburgh")).toBeInTheDocument();
-    expect(screen.getByText("2 items")).toBeInTheDocument();
+    expect(screen.getByText("Excursion 2")).toBeInTheDocument();
 
     await act(async () => {
-      screen.getByText("Edinburgh").closest("button")!.click();
+      (screen.getByText("Edinburgh").closest('[role="button"]') as HTMLElement).click();
     });
 
     expect(screen.getByText("Arrive Edinburgh")).toBeInTheDocument();

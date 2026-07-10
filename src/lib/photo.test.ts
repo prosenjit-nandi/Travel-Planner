@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ItineraryItem } from "../data/types";
-import { photoFor } from "./photo";
+import { photoFor, photoForQuery } from "./photo";
 
 function item(overrides: Partial<ItineraryItem>): ItineraryItem {
   return {
@@ -105,5 +105,20 @@ describe("photoFor", () => {
     });
     const result = await photoFor(item({ locationName: "Big Ben" }));
     expect(result).toBe("https://upload.wikimedia.org/bigben.jpg");
+  });
+});
+
+describe("photoForQuery", () => {
+  it("returns null without fetching for a blank query", async () => {
+    const fetchMock = mockSearchResponse(undefined);
+    expect(await photoForQuery("   ")).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("looks up a bare place name directly", async () => {
+    mockSearchResponse({
+      123: { title: "Edinburgh", thumbnail: { source: "https://upload.wikimedia.org/edinburgh.jpg" } },
+    });
+    expect(await photoForQuery("Edinburgh")).toBe("https://upload.wikimedia.org/edinburgh.jpg");
   });
 });

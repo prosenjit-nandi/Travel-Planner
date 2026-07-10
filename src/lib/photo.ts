@@ -27,25 +27,23 @@ interface WikipediaSearchResponse {
 }
 
 /**
- * Finds a small representative photo for an item's destination via
- * Wikipedia's public search API (free, no key, CORS-enabled) — good for
- * named landmarks, museums, stations, and cities, not for restaurants,
- * hotels, or street addresses that don't have an encyclopedia entry, so a
- * miss (null) is the expected outcome for most day-to-day items. Results
- * (including misses) are cached indefinitely since a place's photo doesn't
- * change.
+ * Finds a small representative photo for a place name via Wikipedia's
+ * public search API (free, no key, CORS-enabled) — good for named
+ * landmarks, museums, stations, and cities, not for restaurants, hotels, or
+ * street addresses that don't have an encyclopedia entry, so a miss (null)
+ * is the expected outcome for most day-to-day items. Results (including
+ * misses) are cached indefinitely since a place's photo doesn't change.
  *
- * Deliberately searches on the bare destination name rather than the
- * city/region-anchored `locationQuery` used for Maps/Uber: MediaWiki's
- * full-text search ranks "British Museum, London, United Kingdom" against
- * the "London" page instead of "British Museum" — the extra disambiguating
- * context that helps geocoding actively hurts here.
+ * Deliberately takes a bare place name rather than the city/region-anchored
+ * `locationQuery` used for Maps/Uber: MediaWiki's full-text search ranks
+ * "British Museum, London, United Kingdom" against the "London" page
+ * instead of "British Museum" — the extra disambiguating context that helps
+ * geocoding actively hurts here.
  */
-export async function photoFor(item: ItineraryItem): Promise<string | null> {
-  const query = baseLocation(item);
-  if (!query) return null;
-
+export async function photoForQuery(query: string): Promise<string | null> {
   const key = query.trim().toLowerCase();
+  if (!key) return null;
+
   const cache = readCache();
   if (key in cache) return cache[key];
 
@@ -70,4 +68,10 @@ export async function photoFor(item: ItineraryItem): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/** Convenience wrapper for an itinerary item — see `photoForQuery`. */
+export function photoFor(item: ItineraryItem): Promise<string | null> {
+  const query = baseLocation(item);
+  return query ? photoForQuery(query) : Promise.resolve(null);
 }

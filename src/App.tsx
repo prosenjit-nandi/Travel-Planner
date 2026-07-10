@@ -59,7 +59,11 @@ export default function App() {
     if (!trip) return [];
     const daySummaries: DaySummary[] = tripDates.map((date) => {
       const items = trip.items.filter((i) => i.date === date);
-      return { date, city: cityForDay(items), itemCount: items.length };
+      const categoryCounts: Record<string, number> = {};
+      for (const item of items) {
+        categoryCounts[item.category] = (categoryCounts[item.category] ?? 0) + 1;
+      }
+      return { date, city: cityForDay(items), itemCount: items.length, categoryCounts };
     });
     return groupTripLegs(daySummaries);
   }, [trip, tripDates]);

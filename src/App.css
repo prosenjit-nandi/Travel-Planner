@@ -98,9 +98,8 @@
 .trip-overview-leg {
   width: 100%;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -111,21 +110,67 @@
   cursor: pointer;
 }
 
+.trip-overview-thumbnail {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--border);
+}
+
+.trip-overview-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trip-overview-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .trip-overview-city {
   font-weight: 600;
 }
 
 .trip-overview-dates {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   text-align: right;
   font-size: 13px;
   color: var(--text-muted);
 }
 
-.trip-overview-count {
-  font-size: 12px;
+.trip-overview-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trip-overview-cat {
+  font-size: 11px;
   color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
   white-space: nowrap;
+}
+
+.trip-overview-cat.cat-transport {
+  border-color: var(--cat-transport);
+}
+.trip-overview-cat.cat-accommodation {
+  border-color: var(--cat-accommodation);
+}
+.trip-overview-cat.cat-dining {
+  border-color: var(--cat-dining);
+}
+.trip-overview-cat.cat-excursion {
+  border-color: var(--cat-excursion);
 }
 
 .status-banner {
