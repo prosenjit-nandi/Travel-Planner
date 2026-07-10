@@ -8,10 +8,17 @@ vi.mock("./geocode", () => ({
 
 import { geocode } from "./geocode";
 
-function mockForecastFetch(daily: Record<string, number[]> | null, ok = true) {
+function mockForecastFetch(
+  daily: Record<string, any> | null,
+  ok = true,
+  hourly: Record<string, any> | null = null
+) {
   const fetchMock = vi.fn().mockResolvedValue({
     ok,
-    json: () => Promise.resolve(daily ? { daily } : {}),
+    json: () => Promise.resolve({
+      ...(daily ? { daily } : {}),
+      ...(hourly ? { hourly } : {}),
+    }),
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
@@ -78,10 +85,11 @@ describe("forecastFor", () => {
       weathercode: [61],
       temperature_2m_max: [19.4],
       temperature_2m_min: [12.1],
+      sunrise: ["2026-07-10T04:56"],
     });
     const date = isoDaysFromNow(1);
     const first = await forecastFor("London", date);
-    expect(first).toEqual({ code: 61, maxC: 19.4, minC: 12.1 });
+    expect(first).toEqual({ code: 61, maxC: 19.4, minC: 12.1, sunrise: "04:56" });
 
     const second = await forecastFor("London", date);
     expect(second).toEqual(first);
@@ -103,6 +111,40 @@ describe("forecastFor", () => {
     mockForecastFetch({ weathercode: [0], temperature_2m_max: [20], temperature_2m_min: [10] });
     const result = await forecastFor("London", isoDaysFromNow(1));
     expect(result).toEqual({ code: 0, maxC: 20, minC: 10 });
+  });
+
+  it("parses and calculates detailed daily and hourly forecast variables", async () => {
+    mockForecastFetch(
+      {
+        weathercode: [61],
+        temperature_2m_max: [19.4],
+        temperature_2m_min: [12.1],
+        sunrise: ["2026-07-10T04:56"],
+        sunset: ["2026-07-10T21:27"],
+        wind_speed_10m_max: [17.2],
+        precipitation_probability_max: [40],
+      },
+      true,
+      {
+        time: Array.from({ length: 24 }, (_, i) => `2026-07-10T${String(i).padStart(2, "0")}:00`),
+        cloud_cover: Array.from({ length: 24 }, (_, i) => (i < 12 ? 20 : 80)), // average: 50%
+        precipitation: Array.from({ length: 24 }, (_, i) => (i === 14 || i === 15 ? 0.5 : 0)),
+      }
+    );
+    const date = isoDaysFromNow(1);
+    const result = await forecastFor("London", date);
+    expect(result).toEqual({
+      code: 61,
+      maxC: 19.4,
+      minC: 12.1,
+      sunrise: "04:56",
+      sunset: "21:27",
+      windSpeedMax: 17.2,
+      precipitationProbabilityMax: 40,
+      sunnyPercentage: 50,
+      cloudyPercentage: 50,
+      rainTimeOfDay: "Afternoon (14:00–16:00)",
+    });
   });
 });
 

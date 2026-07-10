@@ -27,7 +27,7 @@ function day(overrides: Partial<DaySummary> = {}): DaySummary {
     date: "2026-07-24",
     city: "London",
     itemCount: 1,
-    places: ["British Museum"],
+    places: [{ name: "British Museum", category: "Excursion", activity: "Visit British Museum" }],
     ...overrides,
   };
 }
@@ -59,10 +59,100 @@ describe("DayEntry", () => {
     expect(screen.queryByTestId("thumbnail")).not.toBeInTheDocument();
   });
 
-  it("renders a thumbnail per place, mentioning every one", async () => {
+  it("labels accommodation as 'Staying at'", async () => {
     vi.mocked(forecastFor).mockResolvedValue(null);
-    render(<DayEntry day={day({ places: ["British Museum", "Big Ben", "The Ivy"] })} />);
-    expect(screen.getByText("Visiting British Museum, Big Ben, and The Ivy.")).toBeInTheDocument();
+    render(<DayEntry day={day({ places: [{ name: "The Marriott", category: "Accommodation", activity: "Check in" }] })} />);
+    expect(screen.getByText("Staying at The Marriott.")).toBeInTheDocument();
+  });
+
+  describe("Transport label disambiguation", () => {
+    it("labels airport rows as 'Flying from'", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Heathrow Airport T5", category: "Transport", activity: "Departure" }] })} />);
+      expect(screen.getByText("Flying from Heathrow Airport T5.")).toBeInTheDocument();
+    });
+
+    it("labels flight-activity rows as 'Flying from'", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Edinburgh Airport", category: "Transport", activity: "Flight BA1234" }] })} />);
+      expect(screen.getByText("Flying from Edinburgh Airport.")).toBeInTheDocument();
+    });
+
+    it("labels Uber rows as 'Taking a taxi from'", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Hotel Lobby", category: "Transport", activity: "Uber to central London" }] })} />);
+      expect(screen.getByText("Taking a taxi from Hotel Lobby.")).toBeInTheDocument();
+    });
+
+    it("labels tube/underground rows correctly", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "King's Cross St Pancras", category: "Transport", activity: "Take the tube" }] })} />);
+      expect(screen.getByText("Taking the underground from King's Cross St Pancras.")).toBeInTheDocument();
+    });
+
+    it("labels train rows correctly", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Paddington Station", category: "Transport", activity: "Train to Bristol" }] })} />);
+      expect(screen.getByText("Taking the train from Paddington Station.")).toBeInTheDocument();
+    });
+
+    it("labels walking rows as 'Walking to'", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Hyde Park", category: "Transport", activity: "Walk to Hyde Park" }] })} />);
+      expect(screen.getByText("Walking to Hyde Park.")).toBeInTheDocument();
+    });
+
+    it("labels ferry rows correctly", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Thames Clipper", category: "Transport", activity: "Take the ferry" }] })} />);
+      expect(screen.getByText("Taking a ferry from Thames Clipper.")).toBeInTheDocument();
+    });
+
+    it("labels bus rows correctly", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Victoria Coach Station", category: "Transport", activity: "Bus to Brighton" }] })} />);
+      expect(screen.getByText("Taking a bus from Victoria Coach Station.")).toBeInTheDocument();
+    });
+
+    it("falls back to 'Travelling via' for unrecognised transport", async () => {
+      vi.mocked(forecastFor).mockResolvedValue(null);
+      render(<DayEntry day={day({ places: [{ name: "Some Place", category: "Transport", activity: "Get there somehow" }] })} />);
+      expect(screen.getByText("Travelling via Some Place.")).toBeInTheDocument();
+    });
+  });
+
+  it("groups multiple places by type into separate labeled clauses", async () => {
+    vi.mocked(forecastFor).mockResolvedValue(null);
+    render(
+      <DayEntry
+        day={day({
+          places: [
+            { name: "British Museum", category: "Excursion", activity: "Visit" },
+            { name: "Big Ben", category: "Excursion", activity: "Photo stop" },
+            { name: "The Ivy", category: "Dining", activity: "Lunch" },
+            { name: "The Savoy", category: "Accommodation", activity: "Check in" },
+          ],
+        })}
+      />,
+    );
+    expect(
+      screen.getByText("Visiting British Museum and Big Ben. Dining at The Ivy. Staying at The Savoy."),
+    ).toBeInTheDocument();
+  });
+
+  it("renders a thumbnail per place using place.name", async () => {
+    vi.mocked(forecastFor).mockResolvedValue(null);
+    render(
+      <DayEntry
+        day={day({
+          places: [
+            { name: "British Museum", category: "Excursion", activity: "Visit" },
+            { name: "Big Ben", category: "Excursion", activity: "Photo stop" },
+            { name: "The Ivy", category: "Dining", activity: "Lunch" },
+          ],
+        })}
+      />,
+    );
     const thumbnails = screen.getAllByTestId("thumbnail");
     expect(thumbnails.map((t) => t.textContent)).toEqual(["British Museum", "Big Ben", "The Ivy"]);
     expect(thumbnails[0]).toHaveClass("trip-overview-place-photo");

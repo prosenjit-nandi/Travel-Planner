@@ -1,9 +1,17 @@
+/** A unique, meaningful location on a given day, with its itinerary category. */
+export interface PlaceEntry {
+  name: string;
+  category: string;
+  /** The row's Activity text — used to disambiguate Transport sub-types (walk, uber, flight, etc.). */
+  activity: string;
+}
+
 export interface DaySummary {
   date: string;
   city?: string;
   itemCount: number;
-  /** Resolved destination names for the day's items, in itinerary order. */
-  places: string[];
+  /** Unique, resolved destination entries for the day, in itinerary order. */
+  places: PlaceEntry[];
 }
 
 export interface TripLeg {
@@ -66,12 +74,4 @@ export function groupTripLegs(rawDays: DaySummary[]): TripLeg[] {
     }
   }
   return legs;
-}
-
-/** "A" · "A and B" · "A, B, and C" — for reading a list out as prose. */
-export function joinNatural(items: string[]): string {
-  if (items.length === 0) return "";
-  if (items.length === 1) return items[0];
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }

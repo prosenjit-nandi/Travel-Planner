@@ -5,7 +5,7 @@ import { resolveDayItems, todayISO, defaultTripDate } from "./lib/time";
 import { getDayStatus } from "./lib/schedule";
 import { cityForDay } from "./lib/weather";
 import { baseLocation } from "./lib/links";
-import { groupTripLegs, type DaySummary } from "./lib/tripOverview";
+import { groupTripLegs, type DaySummary, type PlaceEntry } from "./lib/tripOverview";
 import { StatusBanner } from "./components/StatusBanner";
 import { DayNav } from "./components/DayNav";
 import { DayWeather } from "./components/DayWeather";
@@ -60,9 +60,16 @@ export default function App() {
     if (!trip) return [];
     const daySummaries: DaySummary[] = tripDates.map((date) => {
       const items = trip.items.filter((i) => i.date === date);
-      const places = items
-        .map((item) => baseLocation(item))
-        .filter((place): place is string => Boolean(place));
+      const seen = new Set<string>();
+      const places: PlaceEntry[] = items.reduce<PlaceEntry[]>((acc, item) => {
+        const name = baseLocation(item);
+        if (!name) return acc;
+        const key = name.trim().toLowerCase();
+        if (seen.has(key)) return acc;
+        seen.add(key);
+        acc.push({ name, category: item.category, activity: item.activity });
+        return acc;
+      }, []);
       return { date, city: cityForDay(items), itemCount: items.length, places };
     });
     return groupTripLegs(daySummaries);

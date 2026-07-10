@@ -52,4 +52,41 @@ describe("DayWeather", () => {
 
     expect(errorSpy).not.toHaveBeenCalled();
   });
+
+  it("renders the detailed weather card with all metrics", async () => {
+    vi.mocked(forecastFor).mockResolvedValue({
+      code: 0,
+      maxC: 25.4,
+      minC: 15.1,
+      sunrise: "05:42",
+      sunset: "20:15",
+      windSpeedMax: 12.3,
+      precipitationProbabilityMax: 10,
+      sunnyPercentage: 80,
+      cloudyPercentage: 20,
+      rainTimeOfDay: "No rain expected",
+    });
+
+    render(<DayWeather city="Paris" date="2026-07-25" />);
+
+    expect(await screen.findByText("Paris")).toBeInTheDocument();
+    expect(screen.getByText("Clear")).toBeInTheDocument();
+    expect(screen.getByText("25°")).toBeInTheDocument();
+    expect(screen.getByText("15°C")).toBeInTheDocument();
+
+    expect(screen.getByText("Sunrise")).toBeInTheDocument();
+    expect(screen.getByText("05:42")).toBeInTheDocument();
+    expect(screen.getByText("Sunset")).toBeInTheDocument();
+    expect(screen.getByText("20:15")).toBeInTheDocument();
+    expect(screen.getByText("Wind Speed")).toBeInTheDocument();
+    expect(screen.getByText("12 km/h")).toBeInTheDocument();
+    expect(screen.getByText("Rain Chance")).toBeInTheDocument();
+    expect(screen.getByText("10%")).toBeInTheDocument();
+
+    expect(screen.getByText("Sunny: 80%")).toBeInTheDocument();
+    expect(screen.getByText("Cloudy: 20%")).toBeInTheDocument();
+
+    expect(screen.getByText("Rain Schedule")).toBeInTheDocument();
+    expect(screen.getByText("No rain expected")).toBeInTheDocument();
+  });
 });

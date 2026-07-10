@@ -165,6 +165,15 @@ export function defaultTripDate(sortedDates: string[], today: string): string {
   return sortedDates.includes(today) ? today : sortedDates[0];
 }
 
+/** "05:03" -> "5:03 AM", "21:15" -> "9:15 PM" — for raw "HH:mm" clock strings
+ * (e.g. sunrise/sunset from a weather API) that aren't tied to a Date/zone. */
+export function formatClockTime(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
 export function formatMinutes(totalMinutes: number): string {
   const m = Math.round(totalMinutes);
   const h = Math.floor(Math.abs(m) / 60);

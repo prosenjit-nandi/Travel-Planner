@@ -1,5 +1,5 @@
 import type { TripLeg } from "../lib/tripOverview";
-import { joinNatural } from "../lib/tripOverview";
+import { joinNatural } from "../lib/text";
 import { formatDayShort } from "../lib/time";
 import { LegSummary } from "./LegSummary";
 

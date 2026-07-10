@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { groupTripLegs, joinNatural, type DaySummary } from "./tripOverview";
+import { groupTripLegs, type DaySummary, type PlaceEntry } from "./tripOverview";
+
+function place(name: string, category = "Excursion", activity = ""): PlaceEntry {
+  return { name, category, activity };
+}
 
 function day(overrides: Partial<DaySummary> & Pick<DaySummary, "date">): DaySummary {
   return { city: undefined, itemCount: 0, places: [], ...overrides };
@@ -11,8 +15,8 @@ describe("groupTripLegs", () => {
   });
 
   it("creates one leg per day when cities change, keeping each day's own summary", () => {
-    const londonDay = day({ date: "2026-07-24", city: "London", itemCount: 2, places: ["British Museum", "The Ivy"] });
-    const edinburghDay = day({ date: "2026-07-25", city: "Edinburgh", itemCount: 1, places: ["Edinburgh Castle"] });
+    const londonDay = day({ date: "2026-07-24", city: "London", itemCount: 2, places: [place("British Museum"), place("The Ivy", "Dining")] });
+    const edinburghDay = day({ date: "2026-07-25", city: "Edinburgh", itemCount: 1, places: [place("Edinburgh Castle")] });
 
     expect(groupTripLegs([londonDay, edinburghDay])).toEqual([
       { city: "London", startDate: "2026-07-24", endDate: "2026-07-24", itemCount: 2, days: [londonDay] },
@@ -21,8 +25,8 @@ describe("groupTripLegs", () => {
   });
 
   it("merges consecutive days in the same city into one leg, preserving each day separately", () => {
-    const day1 = day({ date: "2026-07-24", city: "London", itemCount: 2, places: ["British Museum"] });
-    const day2 = day({ date: "2026-07-25", city: "London", itemCount: 1, places: ["Big Ben"] });
+    const day1 = day({ date: "2026-07-24", city: "London", itemCount: 2, places: [place("British Museum")] });
+    const day2 = day({ date: "2026-07-25", city: "London", itemCount: 1, places: [place("Big Ben")] });
 
     expect(groupTripLegs([day1, day2])).toEqual([
       { city: "London", startDate: "2026-07-24", endDate: "2026-07-25", itemCount: 3, days: [day1, day2] },
@@ -86,23 +90,5 @@ describe("groupTripLegs", () => {
       expect(legs.map((l) => l.city)).toEqual(["London", "Edinburgh"]);
       expect(legs[0].days).toHaveLength(2);
     });
-  });
-});
-
-describe("joinNatural", () => {
-  it("returns an empty string for no items", () => {
-    expect(joinNatural([])).toBe("");
-  });
-
-  it("returns the single item as-is", () => {
-    expect(joinNatural(["London"])).toBe("London");
-  });
-
-  it("joins two items with 'and'", () => {
-    expect(joinNatural(["London", "Edinburgh"])).toBe("London and Edinburgh");
-  });
-
-  it("joins three or more items with commas and a trailing 'and'", () => {
-    expect(joinNatural(["London", "Edinburgh", "Paris"])).toBe("London, Edinburgh, and Paris");
   });
 });
