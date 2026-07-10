@@ -32,9 +32,11 @@ export function DayWeather({ city, date }: Props) {
     forecast.rainTimeOfDay !== undefined;
 
   if (!hasExtra) {
+    const minF = Math.round(forecast.minC * 9 / 5 + 32);
+    const maxF = Math.round(forecast.maxC * 9 / 5 + 32);
     return (
       <div className="day-weather">
-        {weatherLabel(forecast.code)} · {Math.round(forecast.minC)}–{Math.round(forecast.maxC)}°C
+        {weatherLabel(forecast.code)} · {Math.round(forecast.minC)}–{Math.round(forecast.maxC)}°C ({minF}–{maxF}°F)
       </div>
     );
   }
@@ -53,6 +55,8 @@ export function DayWeather({ city, date }: Props) {
 
   const emoji = getWeatherEmoji(forecast.code);
   const label = weatherLabel(forecast.code);
+  const maxF = Math.round(forecast.maxC * 9 / 5 + 32);
+  const minF = Math.round(forecast.minC * 9 / 5 + 32);
 
   return (
     <div className={`day-weather-card weather-code-${forecast.code}`}>
@@ -65,11 +69,12 @@ export function DayWeather({ city, date }: Props) {
           </div>
         </div>
         <div className="weather-temp-range">
-          <span className="weather-temp-max">{Math.round(forecast.maxC)}°</span>
+          <span className="weather-temp-max">{Math.round(forecast.maxC)}°C ({maxF}°F)</span>
           <span className="weather-temp-divider">/</span>
-          <span className="weather-temp-min">{Math.round(forecast.minC)}°C</span>
+          <span className="weather-temp-min">{Math.round(forecast.minC)}°C ({minF}°F)</span>
         </div>
       </div>
+
 
       <div className="weather-card-grid">
         <div className="weather-grid-item">

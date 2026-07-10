@@ -43,7 +43,7 @@ describe("DayEntry", () => {
   it("weaves the weather into the narrative when available", async () => {
     vi.mocked(forecastFor).mockResolvedValue({ code: 0, maxC: 20, minC: 10 });
     render(<DayEntry day={day()} />);
-    expect(await screen.findByText("Clear, 10–20°C. Visiting British Museum.")).toBeInTheDocument();
+    expect(await screen.findByText("Clear, 10–20°C (50–68°F). Visiting British Museum.")).toBeInTheDocument();
   });
 
   it("skips the weather lookup when the day has no known city", () => {

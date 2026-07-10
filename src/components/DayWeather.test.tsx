@@ -22,7 +22,7 @@ describe("DayWeather", () => {
   it("renders the label and temperature range", async () => {
     vi.mocked(forecastFor).mockResolvedValue({ code: 0, maxC: 19.6, minC: 12.4 });
     render(<DayWeather city="London" date="2026-07-25" />);
-    expect(await screen.findByText("Clear · 12–20°C")).toBeInTheDocument();
+    expect(await screen.findByText("Clear · 12–20°C (54–67°F)")).toBeInTheDocument();
   });
 
   it("re-fetches when the city or date changes", async () => {
@@ -71,8 +71,8 @@ describe("DayWeather", () => {
 
     expect(await screen.findByText("Paris")).toBeInTheDocument();
     expect(screen.getByText("Clear")).toBeInTheDocument();
-    expect(screen.getByText("25°")).toBeInTheDocument();
-    expect(screen.getByText("15°C")).toBeInTheDocument();
+    expect(screen.getByText("25°C (78°F)")).toBeInTheDocument();
+    expect(screen.getByText("15°C (59°F)")).toBeInTheDocument();
 
     expect(screen.getByText("Sunrise")).toBeInTheDocument();
     expect(screen.getByText("05:42")).toBeInTheDocument();

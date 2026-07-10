@@ -89,7 +89,11 @@ export function DayEntry({ day }: { day: DaySummary }) {
   }, [day.city, day.date]);
 
   const weatherClause = forecast
-    ? `${weatherLabel(forecast.code)}, ${Math.round(forecast.minC)}–${Math.round(forecast.maxC)}°C. `
+    ? (() => {
+        const minF = Math.round(forecast.minC * 9 / 5 + 32);
+        const maxF = Math.round(forecast.maxC * 9 / 5 + 32);
+        return `${weatherLabel(forecast.code)}, ${Math.round(forecast.minC)}–${Math.round(forecast.maxC)}°C (${minF}–${maxF}°F). `;
+      })()
     : "";
 
   const clauses = placeClauses(day.places);
